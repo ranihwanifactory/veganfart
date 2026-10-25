@@ -46,8 +46,8 @@ button,#hud .tt,#rd,#mode,h4{font-family:'Do Hyeon','Noto Sans KR','Malgun Gothi
 #panel{left:auto;right:12px;top:calc(env(safe-area-inset-top,0px) + 72px);max-height:calc(100% - 160px)}
 #res{top:76px}
 #panel{width:min(400px,calc(100% - 24px))}
-#types{gap:8px}#types button{font-size:16px;padding:9px 14px;border-radius:12px;background:rgba(14,26,48,.85);border:1px solid #1f3a56;color:#fff}
-#types button.on{background:linear-gradient(180deg,#0a8bc4,#0a6aa0);border-color:#4fd0ff;box-shadow:0 0 12px rgba(79,208,255,.55)}
+#types,#tgs{gap:8px}#types button,#tgs button{font-size:16px;padding:9px 14px;border-radius:12px;background:rgba(14,26,48,.85);border:1px solid #1f3a56;color:#fff}
+#types button.on,#tgs button.on{background:linear-gradient(180deg,#0a8bc4,#0a6aa0);border-color:#4fd0ff;box-shadow:0 0 12px rgba(79,208,255,.55)}
 h4{color:#38b6ff;font-size:14px}
 @media(max-width:720px){#tr{top:calc(env(safe-area-inset-top,0px) + 108px)}#panel{top:calc(env(safe-area-inset-top,0px) + 166px);max-height:calc(100% - 260px)}#res{top:166px}#bar{flex-wrap:wrap}#bar button{padding:0 12px;font-size:16px}}
 </style></head><body>
@@ -58,12 +58,13 @@ h4{color:#38b6ff;font-size:14px}
 <div id="panel">
 <div class="row" id="tabs"><button data-t="a" class="on">실험</button><button data-t="b">도전</button><button data-t="n">노트</button></div>
 <div id="ta">
+<h4>충돌 대상</h4><div class="row" id="tgs"></div><div style="font-size:11px;opacity:.75">※ 행성 임계값은 재미용으로 크게 줄인 값이에요 (실제 달의 결합 에너지는 약 10²⁹ J)</div>
 <h4>입자 종류 선택</h4><div class="row" id="types"></div>
 <div id="info" style="font-size:11px;opacity:.8"></div>
 <label>속도 <b id="sv"></b><input type="range" id="sp" min="0" max="100" step="0.1" value="30"></label>
 <label>입자 개수 <b id="cv">1</b><input type="range" id="ct" min="1" max="500" value="1"></label>
 <label>질량 배율 <b id="mv">1</b>x<input type="range" id="mm" min="0.1" max="10" step="0.1" value="1"></label>
-<label>변기 파괴 임계값 <b id="tv"></b><input type="range" id="th" min="6" max="16" step="0.1" value="10"></label>
+<label>변기 파괴 임계값 <b id="tv"></b><input type="range" id="th" min="6" max="26" step="0.1" value="10"></label>
 <label><input type="checkbox" id="slow" checked> 슬로모션 <b id="sl">0.3</b>x<input type="range" id="sw" min="0.05" max="1" step="0.05" value="0.3"></label>
 <h4>카메라</h4><div class="row" id="cams"></div>
 <h4>비교 실험</h4><button id="cmp">⚖️ 같은 에너지, 다른 조합 (질량 4배 vs 속도 2배)</button>
@@ -87,8 +88,9 @@ const T=[
 const NM=['💩 일반 고형 배출물','🌊 일반 액상형 배출물','🌽 일반 옹수수','🏆 황금 고형 배출물','🪐 일반 배출물 고속 부패 가스','🪨 고밀도 암석','🖌️ 일반 고형 배출물 분말'];T.forEach((t,i)=>t.n=NM[i]);
 const CAMS=['자유 시점','입자 추적','변기 클로즈업','방호벽 안쪽'];
 const FACTS=['속도가 2배면 운동에너지는 4배가 돼요!','질량이 2배면 운동에너지는 2배가 돼요. 속도가 더 힘이 세요!','E = ½mv² : 속도는 제곱으로 효과가 커져요.','같은 에너지여도 질량이 큰 쪽이 운동량(mv)은 더 커요.','에너지가 임계값을 넘으면 도자기는 버티지 못하고 깨져요.'];
-const STG=['철썩! 변기 무사 😌','금이 갔어요! 🔨','큰 조각이 떨어져 나갔어요! 😱','대폭발 파괴!! 💥'];
-const IP=new THREE.Vector3(3.2,1.2,0);
+const STG={get 0(){return '철썩! '+TG.nm+' 무사 😌'},get 1(){return '금이 갔어요! 🔨'},get 2(){return '큰 조각이 떨어져 나갔어요! 😱'},get 3(){return TG.nm+' 대폭발 파괴!! 💥'}};
+const IP=new THREE.Vector3(3.2,1.2,0),V=(x,y,z)=>new THREE.Vector3(x,y,z);
+const TG={nm:'변기',ix:2.9,cs:.7,ss:1,fs:1,f2:2,sr:.7,c:V(4,1.3,0),fl:V(3,1.5,0),look:V(4,1.2,0),cp:V(-.5,1.8,3.4),ip2:V(-2,2.2,6.3)};
 let sel=0,s=30,count=1,mmul=1,thr=1e10,camM=0,phase='idle',theta=-Math.PI/2,vel=0,grp=null,hs=0,auto=0,flash=0,shake=0,chall=false,mi=0,queue=null,cmpRes=[];
 let notes=JSON.parse(localStorage.getItem('toiletLab')||'[]'),stars=JSON.parse(localStorage.getItem('toiletStars')||'[]'),ov=null;
 // ---------- three
@@ -122,7 +124,23 @@ for(let i=0;i<10;i++){const a=i/10*Math.PI*2;addP(new THREE.BoxGeometry(.4,.9,.5
 addP(new THREE.CylinderGeometry(.55,.7,.5,16),4,.25,0,0,true);
 addP(new THREE.BoxGeometry(.6,.9,1.4),5.2,1.6,0,0,true);addP(new THREE.BoxGeometry(.7,.15,1.5),5.2,2.12,0,0,true);
 function makeBody(m,v,w,o){const b=Object.assign({m,v,w,r:.15,bn:.4,life:99,k:'f'},o);bodies.push(b);return b}
-function shard(){const s=.07+R()*.15,m=new THREE.Mesh(new THREE.BoxGeometry(s,s*(.5+R()),s*(.5+R())),porc);m.castShadow=true;sc.add(m);return m}
+let SH=porc;
+function mkToilet(){for(let i=0;i<10;i++){const a=i/10*Math.PI*2;addP(new THREE.BoxGeometry(.4,.9,.55),4+Math.cos(a)*.8,.95,Math.sin(a)*.8,-a,true)}addP(new THREE.CylinderGeometry(.55,.7,.5,16),4,.25,0,0,true);addP(new THREE.BoxGeometry(.6,.9,1.4),5.2,1.6,0,0,true);addP(new THREE.BoxGeometry(.7,.15,1.5),5.2,2.12,0,0,true)}
+const PL={e:{nm:'지구',R:3,cx:9,thr:21,sh:0x3b7a4a},m:{nm:'달',R:1.6,cx:8,thr:17,sh:0x9a9a9a},r:{nm:'화성',R:2.2,cx:8.5,thr:19,sh:0xa84a28}};
+function mkTex(k){const c=document.createElement('canvas');c.width=256;c.height=128;const g=c.getContext('2d');
+if(k=='e'){g.fillStyle='#1f5fc0';g.fillRect(0,0,256,128);g.fillStyle='#3a9a45';for(let i=0;i<16;i++){g.beginPath();g.ellipse(R()*256,20+R()*88,8+R()*26,6+R()*16,R()*3,0,7);g.fill()}g.fillStyle='rgba(255,255,255,.4)';for(let i=0;i<14;i++){g.beginPath();g.ellipse(R()*256,R()*128,10+R()*24,3+R()*5,0,0,7);g.fill()}g.fillStyle='#eef';g.fillRect(0,0,256,9);g.fillRect(0,119,256,9)}
+else{g.fillStyle=k=='m'?'#a3a3a3':'#b5532f';g.fillRect(0,0,256,128);for(let i=0;i<40;i++){const x=R()*256,y=R()*128,r=3+R()*12;g.fillStyle=k=='m'?'rgba(60,60,60,.45)':'rgba(90,30,10,.4)';g.beginPath();g.arc(x,y,r,0,7);g.fill();g.strokeStyle=k=='m'?'rgba(230,230,230,.5)':'rgba(240,170,120,.35)';g.stroke()}if(k=='r'){g.fillStyle='#f4eee8';g.fillRect(0,0,256,7);g.fillRect(0,121,256,7)}}
+return new THREE.CanvasTexture(c)}
+function setTarget(key){resetAll();P.forEach(p=>sc.remove(p.m));P.length=0;let thx=10;
+if(key=='t'){mkToilet();SH=porc;Object.assign(TG,{nm:'변기',ix:2.9,cs:.7,ss:1,fs:1,f2:2,sr:.7,c:V(4,1.3,0),fl:V(3,1.5,0),look:V(4,1.2,0),cp:V(-.5,1.8,3.4),ip2:V(-2,2.2,6.3)});IP.set(3.2,1.2,0)}
+else{const pl=PL[key],cy=pl.R+1.2,dy=1.4-cy,sx=pl.cx-Math.sqrt(pl.R*pl.R-dy*dy);thx=pl.thr;
+const mat=new THREE.MeshStandardMaterial({map:mkTex(key),roughness:key=='e'?.5:.95,side:THREE.DoubleSide});SH=new THREE.MeshStandardMaterial({color:pl.sh,roughness:.9});
+const NP=10,NT=4,pw=Math.PI*2/NP,th=Math.PI/NT;for(let a=0;a<NP;a++)for(let b=0;b<NT;b++){const ps=a*pw,ts=b*th,g=new THREE.SphereGeometry(pl.R,6,5,ps,pw,ts,th),uv=g.attributes.uv;
+for(let i=0;i<uv.count;i++){uv.setXY(i,(ps+uv.getX(i)*pw)/(Math.PI*2),1-(ts+(1-uv.getY(i))*th)/Math.PI)}
+g.computeBoundingBox();const c=new THREE.Vector3();g.boundingBox.getCenter(c);g.translate(-c.x,-c.y,-c.z);const m=new THREE.Mesh(g,mat);m.position.set(pl.cx+c.x,cy+c.y,c.z);m.castShadow=m.receiveShadow=true;sc.add(m);P.push({m,hp:m.position.clone(),hr:m.rotation.clone(),big:true})}
+Object.assign(TG,{nm:pl.nm,ix:sx-.3,cs:pl.R*.35,ss:pl.R*.6,fs:pl.R*.6,f2:6,sr:pl.R*.5,c:V(pl.cx,cy,0),fl:V(4,2.5,0),look:V(pl.cx-1,cy,0),cp:V(sx-5,3,pl.R+5),ip2:V(sx-8,3.5,6.3)});IP.set(sx,1.4,0)}
+fl.position.copy(IP);$('th').value=thx;upd();buildG();$('res').style.display='none'}
+function shard(){const s=(.07+R()*.15)*TG.ss,m=new THREE.Mesh(new THREE.BoxGeometry(s,s*(.5+R()),s*(.5+R())),SH);m.castShadow=true;sc.add(m);return m}
 function drop(col,sz){const m=new THREE.Mesh(new THREE.SphereGeometry(sz||.07,8,6),new THREE.MeshStandardMaterial({color:col,roughness:.2}));sc.add(m);return m}
 // ---------- audio
 let ac=null,wh=null,wg=null;
@@ -185,7 +203,7 @@ $('fire').onclick=()=>{A();if(phase=='idle'){phase='accel'}if(phase=='accel')lau
 function launch(o){o=o||{};ov=o;vel=o.v!=null?o.v:getV();whine(false);if(!grp)buildG();grp.position.set(ringC.x,1.4,0);phase='flying';tone(200,60,.4,.15,'square')}
 function sim(dt,rdt){const f=Math.min(.99,(phase=='flying'?vel:getV())/C);
 if(grp&&grp.userData.fl)grp.userData.fl.forEach(m=>m.scale.setScalar(.92+R()*.16));if(phase=='accel'){theta+=(3+s*.5)*dt;placeG();if(wh)wh.frequency.value=120+f*2200+s*6;grp&&(grp.rotation.z+=dt*3)}
-if(phase=='flying'&&grp){const ext=grp.userData.ext||.3,sp=14+vel/C*60+s*.3;grp.position.x+=Math.max(sp,14)*dt;grp.scale.x=1+Math.min(f*8,6);if(grp.position.x+ext*.5>=2.9)impact()}
+if(phase=='flying'&&grp){const ext=grp.userData.ext||.3,sp=14+vel/C*60+s*.3;grp.position.x+=Math.max(sp,14)*dt;grp.scale.x=1+Math.min(f*8,6);if(grp.position.x+ext*.5>=TG.ix)impact()}
 const g=-9.8;for(let i=bodies.length-1;i>=0;i--){const b=bodies[i];b.v.y+=g*dt;b.m.position.addScaledVector(b.v,dt);b.m.rotation.x+=b.w.x*dt;b.m.rotation.y+=b.w.y*dt;b.m.rotation.z+=b.w.z*dt;const p=b.m.position;
 if(p.y<b.r){p.y=b.r;if(Math.abs(b.v.y)>1.5&&R()<.3)tone(900+R()*500,400,.06,.04,'triangle');b.v.y*=-b.bn;b.v.x*=.8;b.v.z*=.8;b.w.multiplyScalar(.7)}
 if(Math.abs(p.z)>6.9){const hit=b.v.length();p.z=Math.sign(p.z)*6.9;b.v.z*=-.4;if(b.k=='f'&&hit>8&&glassCr.length<30){const c=new THREE.Mesh(new THREE.PlaneGeometry(.8+R()*.8,.03),new THREE.MeshBasicMaterial({color:0xffffff}));c.position.set(p.x,p.y,Math.sign(p.z)*6.88);c.rotation.z=R()*3;sc.add(c);glassCr.push(c);noise(.15,5000,.08,'highpass')}}
@@ -200,12 +218,12 @@ if(st>=1){for(let i=0;i<3;i++)setTimeout(()=>noise(.12,6000,.15,'highpass'),i*60
 const nd=t.k=='l'?Math.min(120,count+30):t.k=='a'?10:t.k=='c'?Math.min(count,40)+10:24,sp=3+Math.sqrt(Math.min(ratio,60))*2.5;
 for(let i=0;i<nd;i++){const m=drop(t.col,t.k=='l'?.06:.08);m.position.copy(IP).add(new THREE.Vector3(-.2,R()*.4-.2,R()*.6-.3));const a=R()*6.28,c=R()*2-1,d=new THREE.Vector3(-.2+(R()-.3)*.5,Math.abs(c)*.8,Math.cos(a)).normalize();
 if(st==0){d.x=-Math.abs(d.x);d.multiplyScalar(2+R()*3)}else d.multiplyScalar(sp*(.4+R()));makeBody(m,d,new THREE.Vector3(),{r:.05,bn:.15,k:'d',life:1+R()})}
-if(st==1||st==2){const n=st==1?4:2;P.filter(p=>!p.free&&p.big).sort((a,b)=>a.hp.distanceTo(IP)-b.hp.distanceTo(IP)).slice(0,n).forEach((p,i)=>{if(st==1){}else free(p,ratio,1)});
-for(let i=0;i<(st==1?5:10);i++){const c=new THREE.Mesh(new THREE.BoxGeometry(.012,.3+R()*.5,.02),new THREE.MeshBasicMaterial({color:0x222222}));c.position.set(3.12,.8+R()*.7,(R()-.5)*1);c.rotation.x=R()*3;sc.add(c);cracks.push(c)}
+if(st==1||st==2){const n=st==1?4:TG.f2;P.filter(p=>!p.free&&p.big).sort((a,b)=>a.hp.distanceTo(IP)-b.hp.distanceTo(IP)).slice(0,n).forEach((p,i)=>{if(st==1){}else free(p,ratio,1)});
+for(let i=0;i<(st==1?5:10);i++){const c=new THREE.Mesh(new THREE.BoxGeometry(.012*TG.cs/.7,(.3+R()*.5)*TG.cs/.7,.02*TG.cs/.7),new THREE.MeshBasicMaterial({color:0x222222}));c.position.set(IP.x-.08,IP.y+(R()-.5)*TG.cs*1.4,(R()-.5)*TG.cs*1.4);c.rotation.x=R()*3;sc.add(c);cracks.push(c)}
 for(let i=0;i<(st==1?5:14);i++){const m=shard();m.position.copy(IP);makeBody(m,new THREE.Vector3(R()*3,R()*4+1,(R()-.5)*6),new THREE.Vector3(R()*9,R()*9,R()*9),{k:'f',r:.08})}}
-if(st==3){P.forEach(p=>free(p,ratio,1));for(let i=0;i<44;i++){const m=shard();m.position.set(4+(R()-.5),.4+R()*1.5,(R()-.5)*1.4);const d=m.position.clone().sub(IP).normalize();d.x+=.6;makeBody(m,d.multiplyScalar(sp*(.5+R())),new THREE.Vector3(R()*14,R()*14,R()*14),{k:'f',r:.1})}
-for(let i=0;i<10;i++){const d=new THREE.Mesh(new THREE.SphereGeometry(.5,8,6),new THREE.MeshBasicMaterial({color:0xcfc4b0}));d.position.set(3.5+R()-.5,1+R(),(R()-.5)*1.5);addFx(d,.5,2.4+R()*2,2.2,.5,.6)}
-const sw=new THREE.Mesh(new THREE.RingGeometry(.3,.45,48),new THREE.MeshBasicMaterial({color:0xaee6ff,side:THREE.DoubleSide}));sw.position.copy(IP);sw.rotation.y=Math.PI/2;addFx(sw,1,28,.9,.9)}
+if(st==3){P.forEach(p=>free(p,ratio,1));for(let i=0;i<44;i++){const m=shard();m.position.copy(TG.c).add(V(R()-.5,R()-.5,R()-.5).multiplyScalar(TG.sr*2));const d=m.position.clone().sub(IP).normalize();d.x+=.6;makeBody(m,d.multiplyScalar(sp*(.5+R())),new THREE.Vector3(R()*14,R()*14,R()*14),{k:'f',r:.1})}
+for(let i=0;i<10;i++){const d=new THREE.Mesh(new THREE.SphereGeometry(.5,8,6),new THREE.MeshBasicMaterial({color:0xcfc4b0}));d.position.copy(TG.c).add(V(R()-.5,R()-.5,R()-.5).multiplyScalar(TG.sr*2));addFx(d,.5*TG.fs,(2.4+R()*2)*TG.fs,2.2,.5,.6)}
+const sw=new THREE.Mesh(new THREE.RingGeometry(.3,.45,48),new THREE.MeshBasicMaterial({color:0xaee6ff,side:THREE.DoubleSide}));sw.position.copy(IP);sw.rotation.y=Math.PI/2;addFx(sw,1,28*TG.fs,.9,.9)}
 tone(90,30,.5,.4,'sawtooth');if(t.k=='h'){for(let i=0;i<16;i++){const fm=new THREE.Mesh(new THREE.SphereGeometry(.4,8,6),new THREE.MeshBasicMaterial({color:i%2?0xd9bf8a:0xeedfba,depthWrite:false}));fm.position.set(IP.x+R()*.6-.3,IP.y+R()*.8-.2,(R()-.5)*1.6);addFx(fm,.4,2.4+R()*1.2,1.8+R()*.8,.55,.5)}noise(.5,3000,.2,'highpass')}if(st>=2){noise(.6,2500,.3);if(t.k!='a')setTimeout(()=>tone(300,80,.15,.2,'sine'),150)}
 setTimeout(()=>{if(queue&&queue.length){resetAll();const q=queue.shift();setupFire(q)}else if(queue){finishCmp()}},3600)}
 function free(p,ratio,k){if(p.free)return;p.free=true;const d=p.m.position.clone().sub(IP),dist=d.length();d.normalize();d.x+=.8;d.y+=.35;d.normalize();const f=(5+Math.sqrt(Math.min(ratio,60))*3)/(1+dist*.5)*(.6+R()*.8);makeBody(p.m,d.multiplyScalar(f),new THREE.Vector3((R()-.5)*14,(R()-.5)*14,(R()-.5)*14),{k:'f',r:.3,bn:.35})}
@@ -225,9 +243,9 @@ let ct=.5,cp=.35,cd=18,cx=-1,cs=new THREE.Vector3(),down=false,lx=0,ly=0;
 cv.onpointerdown=e=>{down=true;lx=e.clientX;ly=e.clientY};addEventListener('pointerup',()=>down=false);
 addEventListener('pointermove',e=>{if(down&&camM==0){ct-=(e.clientX-lx)*.006;cp=Math.max(.05,Math.min(1.4,cp+(e.clientY-ly)*.006));lx=e.clientX;ly=e.clientY}});
 cv.onwheel=e=>{cd=Math.max(5,Math.min(40,cd+e.deltaY*.02))};
-function camUpd(rdt,f){const tp=new THREE.Vector3(),lk=new THREE.Vector3(3,1.5,0);
+function camUpd(rdt,f){const tp=new THREE.Vector3(),lk=TG.fl.clone();
 if(camM==1&&grp){tp.set(grp.position.x-5,grp.position.y+1.5,4);lk.set(grp.position.x+4,grp.position.y,0)}
-else if(camM==2){tp.set(-.5,1.8,3.4);lk.set(4,1.2,0)}else if(camM==3){tp.set(-2,2.2,6.3);lk.set(3.5,1.2,0)}
+else if(camM==2){tp.copy(TG.cp);lk.copy(TG.look)}else if(camM==3){tp.copy(TG.ip2);lk.copy(TG.look)}
 else{tp.set(lk.x+Math.sin(ct)*Math.cos(cp)*cd,lk.y+Math.sin(cp)*cd,Math.cos(ct)*Math.cos(cp)*cd)}
 cam.position.lerp(tp,Math.min(1,rdt*5));cs.set((R()-.5)*shake,(R()-.5)*shake,(R()-.5)*shake);cam.position.add(cs);cam.lookAt(lk);
 cam.fov=60+f*45;cam.updateProjectionMatrix();shake*=Math.exp(-rdt*5)}
@@ -242,6 +260,7 @@ cv.style.filter=(phase=='accel'||phase=='flying')&&f>.02?`hue-rotate(${f*160}deg
 flash*=Math.exp(-rdt*6);fl.intensity=flash*12;$('flash').style.opacity=Math.min(.9,flash*.8);
 warn.forEach((l,i)=>l.intensity=phase=='done'?(Math.sin(tm*10+i*3)>0?3:0):0);rn.material.color.setHSL((.5+tm*.05+f*.3)%1,1,.6);neon.intensity=1+Math.sin(tm*6)*.3+f*2;
 camUpd(rdt,phase=='flying'?f:0);ren.render(sc,cam)}
+[['t','🚽 변기'],['e','🌍 지구'],['m','🌙 달'],['r','🔴 화성']].forEach(([k,n],i)=>{const b=document.createElement('button');b.textContent=n;b.onclick=()=>{[...$('tgs').children].forEach((x,j)=>x.classList.toggle('on',j==i));setTarget(k)};$('tgs').appendChild(b)});$('tgs').children[0].classList.add('on');
 $('pt2').onclick=()=>$('pt').click();
 $('snd').onclick=function(){muted=!muted;this.textContent=muted?'🔇':'🔊';if(mg)mg.gain.value=muted?0:1};
 $('cmv').onclick=()=>{camM=(camM+1)%4;[...$('cams').children].forEach((x,j)=>x.classList.toggle('on',j==camM))};
