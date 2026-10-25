@@ -58,13 +58,13 @@ h4{color:#38b6ff;font-size:14px}
 <div id="panel">
 <div class="row" id="tabs"><button data-t="a" class="on">실험</button><button data-t="b">도전</button><button data-t="n">노트</button></div>
 <div id="ta">
-<h4>충돌 대상</h4><div class="row" id="tgs"></div><div style="font-size:11px;opacity:.75">※ 행성 임계값은 재미용으로 크게 줄인 값이에요 (실제 달의 결합 에너지는 약 10²⁹ J)</div>
+<h4>충돌 대상</h4><div class="row" id="tgs"></div><div style="font-size:11px;opacity:.75">※ 행성 임계값은 재미용으로 크게 줄인 값이에요 (실제 달의 결합 에너지는 약 3×10¹⁹ 톤 TNT)</div>
 <h4>입자 종류 선택</h4><div class="row" id="types"></div>
 <div id="info" style="font-size:11px;opacity:.8"></div>
 <label>속도 <b id="sv"></b><input type="range" id="sp" min="0" max="100" step="0.1" value="30"></label>
-<label>입자 개수 <b id="cv">1</b><input type="range" id="ct" min="1" max="500" value="1"></label>
-<label>질량 배율 <b id="mv">1</b>x<input type="range" id="mm" min="0.1" max="10" step="0.1" value="1"></label>
-<label>변기 파괴 임계값 <b id="tv"></b><input type="range" id="th" min="6" max="40" step="0.1" value="10"></label>
+<label>입자 개수 <b id="cv">1</b><input type="range" id="ct" min="0" max="500" value="0"></label>
+<label>질량 배율 <b id="mv">1</b>x<input type="range" id="mm" min="-10" max="50" step="1" value="0"></label>
+<label>파괴 임계값 <b id="tv"></b><input type="range" id="th" min="-3" max="50" step="0.1" value="0.4"></label>
 <label><input type="checkbox" id="slow" checked> 슬로모션 <b id="sl">0.3</b>x<input type="range" id="sw" min="0.05" max="1" step="0.05" value="0.3"></label>
 <h4>카메라</h4><div class="row" id="cams"></div>
 <h4>비교 실험</h4><button id="cmp">⚖️ 같은 에너지, 다른 조합 (질량 4배 vs 속도 2배)</button>
@@ -126,13 +126,23 @@ addP(new THREE.BoxGeometry(.6,.9,1.4),5.2,1.6,0,0,true);addP(new THREE.BoxGeomet
 function makeBody(m,v,w,o){const b=Object.assign({m,v,w,r:.15,bn:.4,life:99,k:'f'},o);bodies.push(b);return b}
 let SH=porc;
 function mkToilet(){for(let i=0;i<10;i++){const a=i/10*Math.PI*2;addP(new THREE.BoxGeometry(.4,.9,.55),4+Math.cos(a)*.8,.95,Math.sin(a)*.8,-a,true)}addP(new THREE.CylinderGeometry(.55,.7,.5,16),4,.25,0,0,true);addP(new THREE.BoxGeometry(.6,.9,1.4),5.2,1.6,0,0,true);addP(new THREE.BoxGeometry(.7,.15,1.5),5.2,2.12,0,0,true)}
-const PL={e:{nm:'지구',R:3,cx:9,thr:21,sh:0x3b7a4a},m:{nm:'달',R:1.6,cx:8,thr:17,sh:0x9a9a9a},r:{nm:'화성',R:2.2,cx:8.5,thr:19,sh:0xa84a28}};
+const PL={e:{nm:'지구',R:3,cx:9,thr:11.4,sh:0x3b7a4a},m:{nm:'달',R:1.6,cx:8,thr:7.4,sh:0x9a9a9a},r:{nm:'화성',R:2.2,cx:8.5,thr:9.4,sh:0xa84a28}};
+function mkTruck(){const cx=8.5,cy=2.2,Rt=1.5,L=6,NA=8,NL=3,pw=Math.PI*2/NA,pl=L/NL;
+const tm=new THREE.MeshStandardMaterial({color:0x6f9a3c,metalness:.5,roughness:.35,side:THREE.DoubleSide}),cm=new THREE.MeshStandardMaterial({color:0x2a62c9,metalness:.3,roughness:.4}),km=new THREE.MeshStandardMaterial({color:0x3a3f4a,roughness:.7}),wm=new THREE.MeshStandardMaterial({color:0x151515,roughness:.9});SH=tm;
+const add=(g,mat,x,y,z)=>{const m=new THREE.Mesh(g,mat);m.position.set(x,y,z);m.castShadow=m.receiveShadow=true;sc.add(m);P.push({m,hp:m.position.clone(),hr:m.rotation.clone(),big:true})};
+for(let a=0;a<NA;a++)for(let j=0;j<NL;j++){const g=new THREE.CylinderGeometry(Rt,Rt,pl,5,1,true,a*pw,pw);g.rotateX(Math.PI/2);g.translate(0,0,-L/2+(j+.5)*pl);g.computeBoundingBox();const c=new THREE.Vector3();g.boundingBox.getCenter(c);g.translate(-c.x,-c.y,-c.z);add(g,tm,cx+c.x,cy+c.y,c.z)}
+[-1,1].forEach(s=>add(new THREE.CircleGeometry(Rt,16),tm,cx,cy,s*L/2));
+add(new THREE.BoxGeometry(1.5,.3,8.4),km,cx,.65,.6);add(new THREE.BoxGeometry(1.7,1.8,1.6),cm,cx,1.85,4.1);
+[-2.2,-.7,3.4].forEach(z=>[-1,1].forEach(s=>{const g=new THREE.CylinderGeometry(.55,.55,.4,12);g.rotateZ(Math.PI/2);add(g,wm,cx+s*.95,.55,z)}));
+const dy=1.4-cy,sx=cx-Math.sqrt(Rt*Rt-dy*dy);
+Object.assign(TG,{nm:'고형 배출물 수거 차 탱크',ix:sx-.3,cs:1,ss:1,fs:1.3,f2:5,sr:1.6,c:V(cx,cy,0),fl:V(4,2,0),look:V(cx-1,cy,0),cp:V(sx-4.5,2.6,5),ip2:V(sx-7,3,6.3)});IP.set(sx,1.4,0);return 2.4}
 function mkTex(k){const c=document.createElement('canvas');c.width=256;c.height=128;const g=c.getContext('2d');
 if(k=='e'){g.fillStyle='#1f5fc0';g.fillRect(0,0,256,128);g.fillStyle='#3a9a45';for(let i=0;i<16;i++){g.beginPath();g.ellipse(R()*256,20+R()*88,8+R()*26,6+R()*16,R()*3,0,7);g.fill()}g.fillStyle='rgba(255,255,255,.4)';for(let i=0;i<14;i++){g.beginPath();g.ellipse(R()*256,R()*128,10+R()*24,3+R()*5,0,0,7);g.fill()}g.fillStyle='#eef';g.fillRect(0,0,256,9);g.fillRect(0,119,256,9)}
 else{g.fillStyle=k=='m'?'#a3a3a3':'#b5532f';g.fillRect(0,0,256,128);for(let i=0;i<40;i++){const x=R()*256,y=R()*128,r=3+R()*12;g.fillStyle=k=='m'?'rgba(60,60,60,.45)':'rgba(90,30,10,.4)';g.beginPath();g.arc(x,y,r,0,7);g.fill();g.strokeStyle=k=='m'?'rgba(230,230,230,.5)':'rgba(240,170,120,.35)';g.stroke()}if(k=='r'){g.fillStyle='#f4eee8';g.fillRect(0,0,256,7);g.fillRect(0,121,256,7)}}
 return new THREE.CanvasTexture(c)}
-function setTarget(key){resetAll();P.forEach(p=>sc.remove(p.m));P.length=0;let thx=10;
+function setTarget(key){resetAll();P.forEach(p=>sc.remove(p.m));P.length=0;let thx=.4;
 if(key=='t'){mkToilet();SH=porc;Object.assign(TG,{nm:'변기',ix:2.9,cs:.7,ss:1,fs:1,f2:2,sr:.7,c:V(4,1.3,0),fl:V(3,1.5,0),look:V(4,1.2,0),cp:V(-.5,1.8,3.4),ip2:V(-2,2.2,6.3)});IP.set(3.2,1.2,0)}
+else if(key=='k'){thx=mkTruck()}
 else{const pl=PL[key],cy=pl.R+1.2,dy=1.4-cy,sx=pl.cx-Math.sqrt(pl.R*pl.R-dy*dy);thx=pl.thr;
 const mat=new THREE.MeshStandardMaterial({map:mkTex(key),roughness:key=='e'?.5:.95,side:THREE.DoubleSide});SH=new THREE.MeshStandardMaterial({color:pl.sh,roughness:.9});
 const NP=10,NT=4,pw=Math.PI*2/NP,th=Math.PI/NT;for(let a=0;a<NP;a++)for(let b=0;b<NT;b++){const ps=a*pw,ts=b*th,g=new THREE.SphereGeometry(pl.R,6,5,ps,pw,ts,th),uv=g.attributes.uv;
@@ -151,10 +161,11 @@ const s=a.createBufferSource();s.buffer=b;const fl=a.createBiquadFilter();fl.typ
 function tone(f0,f1,d,g,t){const a=A(),o=a.createOscillator(),G=a.createGain();o.type=t||'sine';o.frequency.setValueAtTime(f0,a.currentTime);o.frequency.exponentialRampToValueAtTime(f1,a.currentTime+d);G.gain.setValueAtTime(g,a.currentTime);G.gain.exponentialRampToValueAtTime(.001,a.currentTime+d);o.connect(G).connect(dest());o.start();o.stop(a.currentTime+d)}
 function whine(on){const a=A();if(on&&!wh){wh=a.createOscillator();wg=a.createGain();wh.type='sawtooth';wg.gain.value=.04;wh.connect(wg).connect(dest());wh.start()}if(!on&&wh){wh.stop();wh=null}}
 // ---------- UI
+const fmtTNT=t=>{for(const[v,n]of[[1e12,'테라톤'],[1e9,'기가톤'],[1e6,'메가톤'],[1e3,'킬로톤'],[1,'톤']])if(t>=v)return (t/v).toPrecision(3)+' '+n+' TNT';return (t*1000).toPrecision(3)+' kg TNT'};
 const fmtV=v=>v<1e3?v.toFixed(1):v.toExponential(2);
 function getV(){return C*.99*Math.pow(s/100,4)}
-function upd(){s=+$('sp').value;count=+$('ct').value;mmul=+$('mm').value;thr=Math.pow(10,+$('th').value);
-$('sv').textContent=fmtV(getV())+' m/s ('+(getV()/C*100).toFixed(3)+'%)';$('cv').textContent=count;$('mv').textContent=mmul;$('tv').textContent='10^'+$('th').value+' J';$('sl').textContent=$('sw').value;
+function upd(){s=+$('sp').value;count=Math.round(Math.pow(10,$('ct').value/100));mmul=+Math.pow(10,$('mm').value/10).toPrecision(2);thr=Math.pow(10,+$('th').value)*4.184e9;
+$('sv').textContent=fmtV(getV())+' m/s ('+(getV()/C*100).toFixed(3)+'%)';$('cv').textContent=count;$('mv').textContent=mmul;$('tv').textContent=(Math.pow(10,+$('th').value)*4.184e9).toExponential(2)+' J | '+fmtTNT(Math.pow(10,+$('th').value));$('sl').textContent=$('sw').value;
 const t=T[sel];$('info').textContent=`질량 ${t.m}kg · 밀도 ${t.d}kg/m³ · 크기 ${t.r*2}m · 탄성 ${t.e} · 점성 ${t.v}`}
 ['sp','ct','mm','th','sw'].forEach(i=>$(i).oninput=()=>{upd();if(phase=='idle'||phase=='accel')buildG()});
 [0,1,6,2,3,4,5].forEach((i,pos)=>{const t=T[i],b=document.createElement('button');b.textContent=t.n;b.onclick=()=>{sel=i;[...$('types').children].forEach((x,j)=>x.classList.toggle('on',j==pos));upd();buildG()};$('types').appendChild(b)});
@@ -178,13 +189,13 @@ function drawMs(){$('ms').innerHTML='';MS.forEach((m,i)=>{const d=document.creat
 function setMode(){$('mode').textContent=chall?`도전 ${mi+1}: ${MS[mi][0]}`:'자유 실험';$('md').textContent=chall?'🧪 자유모드':'🎯 도전모드'}
 $('md').onclick=()=>{chall=!chall;setMode();if(chall){$('panel').style.display='block';document.querySelector('#tabs [data-t=b]').click()}};
 // ---------- notes
-function renderNotes(){$('tbl').innerHTML='<tr><th>#</th><th>입자</th><th>속도</th><th>질량kg</th><th>에너지J</th><th>단계</th></tr>'+notes.slice(-7).reverse().map(r=>`<tr><td>${r.n}</td><td>${r.t}</td><td>${r.v.toExponential(1)}</td><td>${r.M.toPrecision(2)}</td><td>${r.E.toExponential(1)}</td><td>${r.s}</td></tr>`).join('');
+function renderNotes(){$('tbl').innerHTML='<tr><th>#</th><th>입자</th><th>속도</th><th>질량kg</th><th>에너지(TNT톤)</th><th>단계</th></tr>'+notes.slice(-7).reverse().map(r=>`<tr><td>${r.n}</td><td>${r.t}</td><td>${r.v.toExponential(1)}</td><td>${r.M.toPrecision(2)}</td><td>${(r.E/4.184e9).toExponential(1)}</td><td>${r.s}</td></tr>`).join('');
 const g=$('gr').getContext('2d');g.clearRect(0,0,320,140);g.strokeStyle='#345';g.strokeRect(20,6,294,114);g.fillStyle='#8ab';g.font='9px sans-serif';
 const col=['#6f6','#ff6','#f93','#f33'];notes.forEach(r=>{const x=20+Math.min(1,Math.max(0,(Math.log10(r.v+1)/8.6)))*294,y=120-Math.min(1,Math.max(0,Math.log10(r.E+1)/20))*114;g.fillStyle=col[r.s];g.beginPath();g.arc(x,y,4,0,7);g.fill()});
 g.fillStyle='#8ab';g.fillText('v 0 → 3×10⁸',22,134);g.fillText('E',6,16)}
 $('clr').onclick=()=>{notes=[];localStorage.setItem('toiletLab','[]');renderNotes()};
 // ---------- particles
-function buildG(){if(phase=='flying'||phase=='fresh')return;clearG();const t=T[sel],k=t.k,mc=Math.cbrt(mmul);
+function buildG(){if(phase=='flying'||phase=='fresh')return;clearG();const t=T[sel],k=t.k,mc=Math.min(Math.cbrt(mmul),4);
 const n=k=='l'?Math.min(count*3,260):k=='a'?16:k=='c'?Math.min(count*2,100):k=='h'?Math.min(count*6+40,300):Math.min(count,50);
 grp=new THREE.Group();const ext=Math.cbrt(n)*(k=='l'||k=='h'?.09:.28)+.1;grp.userData.ext=ext;
 const mat=k=='h'?new THREE.MeshStandardMaterial({color:0xc9a66b,roughness:1}):k=='g'?new THREE.MeshStandardMaterial({color:t.col,metalness:1,roughness:.12,emissive:0x664400,emissiveIntensity:.5}):k=='a'?new THREE.MeshBasicMaterial({color:t.col,transparent:true,opacity:.3,depthWrite:false}):new THREE.MeshStandardMaterial({color:t.col,roughness:k=='r'?.95:.4,emissive:k=='l'?0x2a1f05:0});
@@ -229,7 +240,7 @@ setTimeout(()=>{if(queue&&queue.length){resetAll();const q=queue.shift();setupFi
 function free(p,ratio,k){if(p.free)return;p.free=true;const d=p.m.position.clone().sub(IP),dist=d.length();d.normalize();d.x+=.8;d.y+=.35;d.normalize();const f=(5+Math.sqrt(Math.min(ratio,60))*3)/(1+dist*.5)*(.6+R()*.8);makeBody(p.m,d.multiplyScalar(f),new THREE.Vector3((R()-.5)*14,(R()-.5)*14,(R()-.5)*14),{k:'f',r:.3,bn:.35})}
 function R_(M,E,ratio,st,frac,t,mm){const n=(notes.length?notes[notes.length-1].n:0)+1,r={k:Object.keys(T).length&&t.k,count,stage:st,v:vel,ratio,frac,mm};
 notes.push({n,t:t.n.slice(0,2),v:vel,M,E,s:st});if(notes.length>60)notes.shift();localStorage.setItem('toiletLab',JSON.stringify(notes));
-let h=`<b>${STG[st]}</b><br>에너지 ${E.toExponential(2)} J (임계값의 ${(ratio*100).toFixed(1)}%) · 운동량 ${(M*vel).toExponential(2)}<br>💡 ${FACTS[(R()*FACTS.length)|0]}`;
+let h=`<b>${STG[st]}</b><br>에너지 ${fmtTNT(E/4.184e9)} (임계값의 ${(ratio*100).toFixed(1)}%) · 운동량 ${(M*vel).toExponential(2)}<br>💡 ${FACTS[(R()*FACTS.length)|0]}`;
 if(queue){cmpRes.push({st,E,p:M*vel,v:vel,M})}
 if(chall){const sr=MS[mi][1](r);if(sr>(stars[mi]||0)){stars[mi]=sr;localStorage.setItem('toiletStars',JSON.stringify(stars))}h+=`<br>미션 결과: ${'★'.repeat(sr)}${'☆'.repeat(3-sr)}`;drawMs()}
 const e=$('res');e.innerHTML=h;e.style.display='block'}
@@ -237,7 +248,7 @@ function setupFire(o){sel=o.sel!=null?o.sel:sel;launchAuto(o)}
 function launchAuto(o){buildG();phase='accel';launch(o)}
 $('cmp').onclick=()=>{A();cmpRes=[];resetAll();const v=getV(),v2=Math.min(v*2,C*.99);queue=[{mm:mmul*4,v:v,sel}];setTimeout(()=>{},0);const first={mm:mmul,v:v2,sel};queue.push(first);const q=queue.shift();$('res').style.display='none';setupFireM(q)};
 function setupFireM(q){const old=mmul;mmul=q.mm;buildG();mmul=old;phase='accel';launch(q)}
-function finishCmp(){queue=null;const [a,b]=cmpRes;$('res').innerHTML=`<b>⚖️ 비교 결과</b><br>A 질량×4: 에너지 ${a.E.toExponential(2)}J, 운동량 ${a.p.toExponential(1)} → ${STG[a.st]}<br>B 속도×2: 에너지 ${b.E.toExponential(2)}J, 운동량 ${b.p.toExponential(1)} → ${STG[b.st]}<br>💡 에너지가 같아 파괴 정도도 같아요. 하지만 속도는 2배만 올리면 되고, 질량은 4배나 필요해요. 속도의 힘이 제곱이라서예요!`;$('res').style.display='block'}
+function finishCmp(){queue=null;const [a,b]=cmpRes;$('res').innerHTML=`<b>⚖️ 비교 결과</b><br>A 질량×4: 에너지 ${fmtTNT(a.E/4.184e9)}, 운동량 ${a.p.toExponential(1)} → ${STG[a.st]}<br>B 속도×2: 에너지 ${fmtTNT(b.E/4.184e9)}, 운동량 ${b.p.toExponential(1)} → ${STG[b.st]}<br>💡 에너지가 같아 파괴 정도도 같아요. 하지만 속도는 2배만 올리면 되고, 질량은 4배나 필요해요. 속도의 힘이 제곱이라서예요!`;$('res').style.display='block'}
 // ---------- camera
 let ct=.5,cp=.35,cd=18,cx=-1,cs=new THREE.Vector3(),down=false,lx=0,ly=0;
 cv.onpointerdown=e=>{down=true;lx=e.clientX;ly=e.clientY};addEventListener('pointerup',()=>down=false);
@@ -260,7 +271,7 @@ cv.style.filter=(phase=='accel'||phase=='flying')&&f>.02?`hue-rotate(${f*160}deg
 flash*=Math.exp(-rdt*6);fl.intensity=flash*12;$('flash').style.opacity=Math.min(.9,flash*.8);
 warn.forEach((l,i)=>l.intensity=phase=='done'?(Math.sin(tm*10+i*3)>0?3:0):0);rn.material.color.setHSL((.5+tm*.05+f*.3)%1,1,.6);neon.intensity=1+Math.sin(tm*6)*.3+f*2;
 camUpd(rdt,phase=='flying'?f:0);ren.render(sc,cam)}
-[['t','🚽 변기'],['e','🌍 지구'],['m','🌙 달'],['r','🔴 화성']].forEach(([k,n],i)=>{const b=document.createElement('button');b.textContent=n;b.onclick=()=>{[...$('tgs').children].forEach((x,j)=>x.classList.toggle('on',j==i));setTarget(k)};$('tgs').appendChild(b)});$('tgs').children[0].classList.add('on');
+[['t','🚽 변기'],['k','🚛 고형 배출물 수거 차 탱크'],['e','🌍 지구'],['m','🌙 달'],['r','🔴 화성']].forEach(([k,n],i)=>{const b=document.createElement('button');b.textContent=n;b.onclick=()=>{[...$('tgs').children].forEach((x,j)=>x.classList.toggle('on',j==i));setTarget(k)};$('tgs').appendChild(b)});$('tgs').children[0].classList.add('on');
 $('pt2').onclick=()=>$('pt').click();
 $('snd').onclick=function(){muted=!muted;this.textContent=muted?'🔇':'🔊';if(mg)mg.gain.value=muted?0:1};
 $('cmv').onclick=()=>{camM=(camM+1)%4;[...$('cams').children].forEach((x,j)=>x.classList.toggle('on',j==camM))};
