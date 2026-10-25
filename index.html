@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="ko"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>입자가속기 시뮬레이터: 변기 파괴 실험실</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Do+Hyeon&family=Noto+Sans+KR:wght@400;500;700&display=swap">
+<style>
+:root{color-scheme:dark;--bg:rgba(10,14,28,.86);--ac:#3df2ff;--tx:#e6f4ff;--bd:#2b4a66}
+*{box-sizing:border-box}html,body{margin:0;height:100%;overflow:hidden;background:#05070d;color:var(--tx);font:14px/1.4 system-ui,"Malgun Gothic",sans-serif;touch-action:none}
+canvas#c{position:fixed;inset:0;width:100%;height:100%;transition:filter .2s}
+#flash{position:fixed;inset:0;background:#fff;opacity:0;pointer-events:none}
+#hud{position:fixed;top:calc(env(safe-area-inset-top,0px) + 6px);left:8px;right:8px;max-width:520px;padding:10px 14px;pointer-events:none;border:1px solid #1d6f7a;border-radius:16px;background:linear-gradient(135deg,rgba(8,22,40,.92),rgba(6,30,44,.85));box-shadow:0 0 18px rgba(61,242,255,.18),inset 0 0 12px rgba(61,242,255,.06)}
+#hud .tt{display:flex;align-items:center;gap:8px;font-size:21px;font-weight:800;letter-spacing:-.5px;color:#fff;white-space:nowrap}
+#hud .tt .ic{font-size:22px;filter:drop-shadow(0 0 4px #b58cff)}#hud .tt .bt{font-size:20px;filter:drop-shadow(0 0 5px #ff9a2e)}
+#mode{font-size:12px;font-weight:700;color:#4dffa0;border:1px solid #2fcf86;background:rgba(20,120,80,.3);border-radius:999px;padding:2px 10px;overflow:hidden;text-overflow:ellipsis;max-width:45%}
+#rd{margin-top:6px;font-size:16px;font-weight:600;color:#a9b8c8}#rd .o{color:#ffb21f;font-weight:800;font-family:ui-monospace,Consolas,monospace}#rd .g{color:#7dff5a;font-weight:800;font-family:ui-monospace,Consolas,monospace}#rd i{font-style:normal;opacity:.5;margin:0 6px}
+#note{margin-top:4px;font-size:11.5px;color:#8c9bb0}
+#res{position:fixed;top:136px;left:50%;transform:translateX(-50%);width:min(92%,460px);background:var(--bg);border:1px solid var(--ac);border-radius:12px;padding:10px 12px;display:none;text-align:center}
+#panel{position:fixed;left:6px;top:136px;width:min(340px,calc(100% - 12px));max-height:calc(100% - 246px);overflow:auto;background:var(--bg);border:1px solid var(--bd);border-radius:12px;padding:8px;display:none}
+#bar{position:fixed;left:0;right:0;bottom:0;padding:8px 8px calc(8px + env(safe-area-inset-bottom,0px));display:flex;gap:6px;flex-wrap:wrap;justify-content:center;background:linear-gradient(transparent,rgba(0,0,0,.7))}
+button{background:#13233a;color:var(--tx);border:1px solid var(--bd);border-radius:10px;padding:8px 10px;font:inherit;cursor:pointer}
+button.on{background:#0b5a66;border-color:var(--ac)}button.big{font-size:17px;font-weight:700;padding:11px 16px}
+#go{background:#0a6b3a}#fire{background:#a3262a}
+label{display:block;margin:6px 0 0;font-size:12px}input[type=range]{width:100%}
+.row{display:flex;gap:4px;flex-wrap:wrap;margin:4px 0}
+table{width:100%;border-collapse:collapse;font-size:11px}td,th{border-bottom:1px solid #223;padding:2px 3px;text-align:right}
+h4{margin:8px 0 2px;color:var(--ac)}.m{display:flex;justify-content:space-between;align-items:center;padding:4px 6px;border:1px solid #223;border-radius:8px;margin:3px 0;font-size:12px;cursor:pointer}.m.sel{border-color:var(--ac)}
+body{font-family:'Noto Sans KR',system-ui,'Malgun Gothic',sans-serif}
+button,#hud .tt,#rd,#mode,h4{font-family:'Do Hyeon','Noto Sans KR','Malgun Gothic',sans-serif}
+#hud{top:calc(env(safe-area-inset-top,0px) + 12px);left:12px;right:auto;width:max-content;max-width:min(452px,calc(100% - 24px));padding:9px 16px 8px;border:1px solid #1b3a52;border-radius:14px;background:rgba(8,16,30,.82);box-shadow:none}
+#hud .tt{font-size:19px;gap:7px;font-weight:400;letter-spacing:0}
+#hud .tt .ic{font-size:19px;filter:none}#hud .tt .bt{font-size:17px;filter:none}
+#mode{font-size:11px;font-weight:400;padding:1px 9px;color:#37e6a0;border-color:#2aa57a;background:rgba(30,140,100,.28)}
+#rd{margin-top:4px;font-size:15px;font-weight:400;color:#c3cedc}
+#rd .o,#rd .g{color:#ffc21a;font-family:'Do Hyeon',sans-serif;font-weight:400;font-size:16px}
+#rd i{opacity:.6;margin:0 8px}
+#note{font-size:11.5px;color:#9fb0c4;margin-top:3px}
+#tr{position:fixed;top:calc(env(safe-area-inset-top,0px) + 12px);right:12px;display:flex;gap:8px}
+#tr button{height:50px;min-width:58px;padding:0 14px;font-size:19px;border-radius:12px;background:rgba(14,24,44,.88);border:1px solid #243a5a;display:flex;align-items:center;justify-content:center;gap:6px}
+#bar{gap:9px;flex-wrap:nowrap;padding:0 8px calc(14px + env(safe-area-inset-bottom,0px));background:none;align-items:center}
+#bar #pt{display:none}
+#bar button{height:46px;padding:0 20px;font-size:19px;border-radius:12px;background:rgba(14,26,48,.92);border:1px solid #24405f;white-space:nowrap;box-shadow:0 2px 8px rgba(0,0,0,.4)}
+#bar #go{background:linear-gradient(180deg,#14a86a,#0b8a56);border-color:#22d68c;box-shadow:0 0 14px rgba(34,214,140,.45)}
+#bar #fire{background:linear-gradient(180deg,#d02f35,#a3262a);border-color:#e0555a}
+#bar #fire:disabled{background:rgba(58,22,28,.9);border-color:#4a2a30;color:#7d5a60;box-shadow:none;cursor:not-allowed}
+#panel{left:auto;right:12px;top:calc(env(safe-area-inset-top,0px) + 72px);max-height:calc(100% - 160px)}
+#res{top:76px}
+#panel{width:min(400px,calc(100% - 24px))}
+#types{gap:8px}#types button{font-size:16px;padding:9px 14px;border-radius:12px;background:rgba(14,26,48,.85);border:1px solid #1f3a56;color:#fff}
+#types button.on{background:linear-gradient(180deg,#0a8bc4,#0a6aa0);border-color:#4fd0ff;box-shadow:0 0 12px rgba(79,208,255,.55)}
+h4{color:#38b6ff;font-size:14px}
+@media(max-width:720px){#tr{top:calc(env(safe-area-inset-top,0px) + 108px)}#panel{top:calc(env(safe-area-inset-top,0px) + 166px);max-height:calc(100% - 260px)}#res{top:166px}#bar{flex-wrap:wrap}#bar button{padding:0 12px;font-size:16px}}
+</style></head><body>
+<canvas id="c"></canvas><div id="flash"></div>
+<div id="hud"><div class="tt"><span class="ic">🚽</span><span class="bt">⚡</span><span>변기 파괴 실험실</span><span id="mode">자유 실험</span></div>
+<div id="rd">속도 <span class="o">0 m/s</span><i>·</i>광속의 <span class="g">0% c</span></div><div id="note">※ 잔상·색 편이·화면 왜곡은 과학 시늉 + 재미용 연출이에요! E = ½mv²</div></div>
+<div id="res"></div>
+<div id="panel">
+<div class="row" id="tabs"><button data-t="a" class="on">실험</button><button data-t="b">도전</button><button data-t="n">노트</button></div>
+<div id="ta">
+<h4>입자 종류 선택</h4><div class="row" id="types"></div>
+<div id="info" style="font-size:11px;opacity:.8"></div>
+<label>속도 <b id="sv"></b><input type="range" id="sp" min="0" max="100" step="0.1" value="30"></label>
+<label>입자 개수 <b id="cv">1</b><input type="range" id="ct" min="1" max="500" value="1"></label>
+<label>질량 배율 <b id="mv">1</b>x<input type="range" id="mm" min="0.1" max="10" step="0.1" value="1"></label>
+<label>변기 파괴 임계값 <b id="tv"></b><input type="range" id="th" min="6" max="16" step="0.1" value="10"></label>
+<label><input type="checkbox" id="slow" checked> 슬로모션 <b id="sl">0.3</b>x<input type="range" id="sw" min="0.05" max="1" step="0.05" value="0.3"></label>
+<h4>카메라</h4><div class="row" id="cams"></div>
+<h4>비교 실험</h4><button id="cmp">⚖️ 같은 에너지, 다른 조합 (질량 4배 vs 속도 2배)</button>
+</div>
+<div id="tb" style="display:none"><h4>도전 미션 (별 3개 평가)</h4><div id="ms"></div></div>
+<div id="tn" style="display:none"><h4>실험 노트</h4><table id="tbl"></table><canvas id="gr" width="320" height="140" style="width:100%;background:#0a1020;border-radius:8px;margin-top:6px"></canvas><div style="font-size:11px">가로: 속도(log) · 세로: 에너지(log) · 점 색: 파괴 단계</div><button id="clr">기록 지우기</button></div>
+</div>
+<div id="tr"><button id="snd">🔊</button><button id="cmv">🥽</button><button id="pt2">⚙ 조작설정</button></div>
+<div id="bar"><button id="pt">⚙️</button><button class="big" id="go">⚡ 가속 시작</button><button class="big" id="fire">✦ 발사!</button><button id="rs">🔄 리셋</button><button id="md">🎯 도전모드</button></div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+const $=id=>document.getElementById(id),C=299792458,R=Math.random;
+const T=[
+{n:'💩 일반 고형',m:.5,d:1100,r:.28,e:.2,v:.6,col:0x6b4423,pe:1,k:'s'},
+{n:'🌊 액상형',m:.3,d:1000,r:.08,e:.05,v:.1,col:0x9a7b2e,pe:.8,k:'l'},
+{n:'🌽 옥수수',m:.4,d:900,r:.07,e:.1,v:.5,col:0xe8c12a,pe:1.6,k:'c'},
+{n:'🏆 황금 고형',m:20,d:19300,r:.3,e:.1,v:.9,col:0xffd23a,pe:1,k:'g'},
+{n:'💨 방귀 가스',m:.01,d:1,r:.5,e:0,v:0,col:0xb6d98a,pe:.5,k:'a'},
+{n:'🪨 돌덩이',m:50,d:2700,r:.3,e:.3,v:1,col:0x777777,pe:1.2,k:'r'},
+{n:'🌫️ 분말 고형',m:.2,d:500,r:.06,e:0,v:.3,col:0xc9a66b,pe:.9,k:'h'}];
+const NM=['💩 일반 고형 배출물','🌊 일반 액상형 배출물','🌽 일반 옹수수','🏆 황금 고형 배출물','🪐 일반 배출물 고속 부패 가스','🪨 고밀도 암석','🖌️ 일반 고형 배출물 분말'];T.forEach((t,i)=>t.n=NM[i]);
+const CAMS=['자유 시점','입자 추적','변기 클로즈업','방호벽 안쪽'];
+const FACTS=['속도가 2배면 운동에너지는 4배가 돼요!','질량이 2배면 운동에너지는 2배가 돼요. 속도가 더 힘이 세요!','E = ½mv² : 속도는 제곱으로 효과가 커져요.','같은 에너지여도 질량이 큰 쪽이 운동량(mv)은 더 커요.','에너지가 임계값을 넘으면 도자기는 버티지 못하고 깨져요.'];
+const STG=['철썩! 변기 무사 😌','금이 갔어요! 🔨','큰 조각이 떨어져 나갔어요! 😱','대폭발 파괴!! 💥'];
+const IP=new THREE.Vector3(3.2,1.2,0);
+let sel=0,s=30,count=1,mmul=1,thr=1e10,camM=0,phase='idle',theta=-Math.PI/2,vel=0,grp=null,hs=0,auto=0,flash=0,shake=0,chall=false,mi=0,queue=null,cmpRes=[];
+let notes=JSON.parse(localStorage.getItem('toiletLab')||'[]'),stars=JSON.parse(localStorage.getItem('toiletStars')||'[]'),ov=null;
+// ---------- three
+const cv=$('c'),ren=new THREE.WebGLRenderer({canvas:cv,antialias:true});ren.shadowMap.enabled=true;ren.setPixelRatio(Math.min(devicePixelRatio,2));
+const sc=new THREE.Scene();sc.background=new THREE.Color(0x070b16);sc.fog=new THREE.FogExp2(0x0a1226,.018);
+const cam=new THREE.PerspectiveCamera(60,1,.1,200);
+sc.add(new THREE.HemisphereLight(0x9ec8ff,0x221a30,.55));
+const dl=new THREE.DirectionalLight(0xffffff,.9);dl.position.set(6,12,8);dl.castShadow=true;dl.shadow.mapSize.set(1024,1024);
+Object.assign(dl.shadow.camera,{left:-20,right:20,top:20,bottom:-20});sc.add(dl);
+const neon=new THREE.PointLight(0x3df2ff,1.2,30);neon.position.set(-13,4.9,2);sc.add(neon);
+const fl=new THREE.PointLight(0xffffff,0,40);fl.position.copy(IP);sc.add(fl);
+const floor=new THREE.Mesh(new THREE.PlaneGeometry(60,40),new THREE.MeshStandardMaterial({color:0x1a2236,roughness:.12,metalness:.6}));
+floor.rotation.x=-Math.PI/2;floor.receiveShadow=true;sc.add(floor);sc.add(new THREE.GridHelper(60,60,0x24406a,0x16243c));
+const glassM=new THREE.MeshPhysicalMaterial({color:0xaee6ff,transparent:true,opacity:.18,roughness:0,metalness:0,side:THREE.DoubleSide,depthWrite:false});
+[-7,7].forEach(z=>{const w=new THREE.Mesh(new THREE.BoxGeometry(30,6,.1),glassM);w.position.set(0,3,z);sc.add(w)});
+const back=new THREE.Mesh(new THREE.BoxGeometry(.3,8,16),new THREE.MeshStandardMaterial({color:0x0e1424}));back.position.set(15,4,0);sc.add(back);
+for(let i=0;i<3;i++){const m=new THREE.Mesh(new THREE.PlaneGeometry(2.4,1.5),new THREE.MeshBasicMaterial({color:[0x2fffa0,0x3df2ff,0xff7a3d][i]}));m.position.set(14.8,4.5,-4+i*4);m.rotation.y=-Math.PI/2;sc.add(m)}
+const warn=[-1,1].map(z=>{const l=new THREE.PointLight(0xff2a2a,0,14);l.position.set(10,6.5,z*5);sc.add(l);const b=new THREE.Mesh(new THREE.SphereGeometry(.25),new THREE.MeshBasicMaterial({color:0xff3030}));b.position.copy(l.position);sc.add(b);return l});
+// accelerator
+const ringC=new THREE.Vector3(-13,4.9,0);
+const rg=new THREE.Mesh(new THREE.TorusGeometry(3.5,.3,16,72),glassM);rg.position.copy(ringC);sc.add(rg);
+const rn=new THREE.Mesh(new THREE.TorusGeometry(3.5,.07,8,72),new THREE.MeshBasicMaterial({color:0x3df2ff}));rn.position.copy(ringC);sc.add(rn);
+const mag=new THREE.MeshStandardMaterial({color:0x223355,emissive:0xff3df2,emissiveIntensity:.8,metalness:.8,roughness:.3});
+for(let i=0;i<14;i++){const a=i/14*Math.PI*2,m=new THREE.Mesh(new THREE.BoxGeometry(.7,.7,.9),mag);m.position.set(ringC.x+Math.cos(a)*3.5,ringC.y+Math.sin(a)*3.5,0);m.rotation.z=a;sc.add(m)}
+const tube=new THREE.Mesh(new THREE.CylinderGeometry(.32,.32,16,16),glassM);tube.rotation.z=Math.PI/2;tube.position.set(-5,1.4,0);sc.add(tube);
+// toilet
+const porc=new THREE.MeshPhysicalMaterial({color:0xffffff,roughness:.12,clearcoat:1,clearcoatRoughness:.05});
+const P=[],bodies=[],fx=[],cracks=[],glassCr=[];
+function addP(g,x,y,z,ry,big){const m=new THREE.Mesh(g,porc);m.position.set(x,y,z);m.rotation.y=ry||0;m.castShadow=m.receiveShadow=true;sc.add(m);P.push({m,hp:m.position.clone(),hr:m.rotation.clone(),big})}
+for(let i=0;i<10;i++){const a=i/10*Math.PI*2;addP(new THREE.BoxGeometry(.4,.9,.55),4+Math.cos(a)*.8,.95,Math.sin(a)*.8,-a,true)}
+addP(new THREE.CylinderGeometry(.55,.7,.5,16),4,.25,0,0,true);
+addP(new THREE.BoxGeometry(.6,.9,1.4),5.2,1.6,0,0,true);addP(new THREE.BoxGeometry(.7,.15,1.5),5.2,2.12,0,0,true);
+function makeBody(m,v,w,o){const b=Object.assign({m,v,w,r:.15,bn:.4,life:99,k:'f'},o);bodies.push(b);return b}
+function shard(){const s=.07+R()*.15,m=new THREE.Mesh(new THREE.BoxGeometry(s,s*(.5+R()),s*(.5+R())),porc);m.castShadow=true;sc.add(m);return m}
+function drop(col,sz){const m=new THREE.Mesh(new THREE.SphereGeometry(sz||.07,8,6),new THREE.MeshStandardMaterial({color:col,roughness:.2}));sc.add(m);return m}
+// ---------- audio
+let ac=null,wh=null,wg=null;
+let mg=null,muted=false;function dest(){const a=A();if(!mg){mg=a.createGain();mg.connect(a.destination)}mg.gain.value=muted?0:1;return mg}
+function A(){if(!ac)ac=new (window.AudioContext||window.webkitAudioContext)();if(ac.state=='suspended')ac.resume();return ac}
+function noise(d,f,g,type){const a=A(),n=a.sampleRate*d,b=a.createBuffer(1,n,a.sampleRate),x=b.getChannelData(0);for(let i=0;i<n;i++)x[i]=(R()*2-1)*(1-i/n);
+const s=a.createBufferSource();s.buffer=b;const fl=a.createBiquadFilter();fl.type=type||'lowpass';fl.frequency.value=f;const G=a.createGain();G.gain.value=g;s.connect(fl).connect(G).connect(dest());s.start()}
+function tone(f0,f1,d,g,t){const a=A(),o=a.createOscillator(),G=a.createGain();o.type=t||'sine';o.frequency.setValueAtTime(f0,a.currentTime);o.frequency.exponentialRampToValueAtTime(f1,a.currentTime+d);G.gain.setValueAtTime(g,a.currentTime);G.gain.exponentialRampToValueAtTime(.001,a.currentTime+d);o.connect(G).connect(dest());o.start();o.stop(a.currentTime+d)}
+function whine(on){const a=A();if(on&&!wh){wh=a.createOscillator();wg=a.createGain();wh.type='sawtooth';wg.gain.value=.04;wh.connect(wg).connect(dest());wh.start()}if(!on&&wh){wh.stop();wh=null}}
+// ---------- UI
+const fmtV=v=>v<1e3?v.toFixed(1):v.toExponential(2);
+function getV(){return C*.99*Math.pow(s/100,4)}
+function upd(){s=+$('sp').value;count=+$('ct').value;mmul=+$('mm').value;thr=Math.pow(10,+$('th').value);
+$('sv').textContent=fmtV(getV())+' m/s ('+(getV()/C*100).toFixed(3)+'%)';$('cv').textContent=count;$('mv').textContent=mmul;$('tv').textContent='10^'+$('th').value+' J';$('sl').textContent=$('sw').value;
+const t=T[sel];$('info').textContent=`질량 ${t.m}kg · 밀도 ${t.d}kg/m³ · 크기 ${t.r*2}m · 탄성 ${t.e} · 점성 ${t.v}`}
+['sp','ct','mm','th','sw'].forEach(i=>$(i).oninput=()=>{upd();if(phase=='idle'||phase=='accel')buildG()});
+[0,1,6,2,3,4,5].forEach((i,pos)=>{const t=T[i],b=document.createElement('button');b.textContent=t.n;b.onclick=()=>{sel=i;[...$('types').children].forEach((x,j)=>x.classList.toggle('on',j==pos));upd();buildG()};$('types').appendChild(b)});
+CAMS.forEach((n,i)=>{const b=document.createElement('button');b.textContent=n;b.onclick=()=>{camM=i;[...$('cams').children].forEach((x,j)=>x.classList.toggle('on',j==i))};$('cams').appendChild(b)});
+$('types').children[0].classList.add('on');$('cams').children[0].classList.add('on');
+$('pt').onclick=()=>{const p=$('panel');p.style.display=p.style.display=='block'?'none':'block'};
+document.querySelectorAll('#tabs button').forEach(b=>b.onclick=()=>{document.querySelectorAll('#tabs button').forEach(x=>x.classList.toggle('on',x==b));['a','b','n'].forEach(k=>$('t'+(k=='a'?'a':k=='b'?'b':'n')).style.display=k==b.dataset.t?'block':'none');if(b.dataset.t=='n')renderNotes()});
+// ---------- missions
+const stg=r=>r.stage,MS=[
+['황금 고형 1개로 변기를 한 방에 부숴라',r=>r.k=='g'&&r.count==1?(r.stage==3?3:r.stage==2?1:0):0],
+['액상형 100개 이상으로 균열만 내라',r=>r.k=='l'&&r.count>=100?(r.stage==1?3:0):0],
+['최소 속도로 변기 파괴하기 (10^5 m/s 미만)',r=>r.stage<3?0:r.v<1e5?3:r.v<1e6?2:1],
+['방귀 가스로 변기를 파괴하라',r=>r.k=='a'&&r.stage==3?3:0],
+['돌덩이 1개로 큰 조각만 떨어뜨려라 (파괴 X)',r=>r.k=='r'&&r.count==1?(r.stage==2?3:r.stage==1?1:0):0],
+['옥수수 50개 이상으로 변기를 부숴라',r=>r.k=='c'&&r.count>=50&&r.stage==3?3:0],
+['일반 고형으로 균열만 내라',r=>r.k=='s'?(r.stage==1?3:0):0],
+['변기를 멀쩡하게, 하지만 임계값의 20~30% 에너지로',r=>r.stage==0&&r.ratio>=.2?3:0],
+['질량 배율 0.5 이하로 변기를 파괴하라',r=>r.mm<=.5&&r.stage==3?3:0],
+['광속의 1% 이상 속도로 쏘고도 변기를 살려라',r=>r.frac>=.01&&r.stage<3?3:0]];
+function drawMs(){$('ms').innerHTML='';MS.forEach((m,i)=>{const d=document.createElement('div');d.className='m'+(i==mi?' sel':'');d.innerHTML=`<span>${i+1}. ${m[0]}</span><span>${'★'.repeat(stars[i]||0)}${'☆'.repeat(3-(stars[i]||0))}</span>`;d.onclick=()=>{mi=i;chall=true;setMode();drawMs()};$('ms').appendChild(d)})}
+function setMode(){$('mode').textContent=chall?`도전 ${mi+1}: ${MS[mi][0]}`:'자유 실험';$('md').textContent=chall?'🧪 자유모드':'🎯 도전모드'}
+$('md').onclick=()=>{chall=!chall;setMode();if(chall){$('panel').style.display='block';document.querySelector('#tabs [data-t=b]').click()}};
+// ---------- notes
+function renderNotes(){$('tbl').innerHTML='<tr><th>#</th><th>입자</th><th>속도</th><th>질량kg</th><th>에너지J</th><th>단계</th></tr>'+notes.slice(-7).reverse().map(r=>`<tr><td>${r.n}</td><td>${r.t}</td><td>${r.v.toExponential(1)}</td><td>${r.M.toPrecision(2)}</td><td>${r.E.toExponential(1)}</td><td>${r.s}</td></tr>`).join('');
+const g=$('gr').getContext('2d');g.clearRect(0,0,320,140);g.strokeStyle='#345';g.strokeRect(20,6,294,114);g.fillStyle='#8ab';g.font='9px sans-serif';
+const col=['#6f6','#ff6','#f93','#f33'];notes.forEach(r=>{const x=20+Math.min(1,Math.max(0,(Math.log10(r.v+1)/8.6)))*294,y=120-Math.min(1,Math.max(0,Math.log10(r.E+1)/20))*114;g.fillStyle=col[r.s];g.beginPath();g.arc(x,y,4,0,7);g.fill()});
+g.fillStyle='#8ab';g.fillText('v 0 → 3×10⁸',22,134);g.fillText('E',6,16)}
+$('clr').onclick=()=>{notes=[];localStorage.setItem('toiletLab','[]');renderNotes()};
+// ---------- particles
+function buildG(){if(phase=='flying'||phase=='fresh')return;clearG();const t=T[sel],k=t.k,mc=Math.cbrt(mmul);
+const n=k=='l'?Math.min(count*3,260):k=='a'?16:k=='c'?Math.min(count*2,100):k=='h'?Math.min(count*6+40,300):Math.min(count,50);
+grp=new THREE.Group();const ext=Math.cbrt(n)*(k=='l'||k=='h'?.09:.28)+.1;grp.userData.ext=ext;
+const mat=k=='h'?new THREE.MeshStandardMaterial({color:0xc9a66b,roughness:1}):k=='g'?new THREE.MeshStandardMaterial({color:t.col,metalness:1,roughness:.12,emissive:0x664400,emissiveIntensity:.5}):k=='a'?new THREE.MeshBasicMaterial({color:t.col,transparent:true,opacity:.3,depthWrite:false}):new THREE.MeshStandardMaterial({color:t.col,roughness:k=='r'?.95:.4,emissive:k=='l'?0x2a1f05:0});
+const g=new THREE.SphereGeometry(k=='c'?t.r:k=='a'?t.r:t.r*(k=='l'?1:mc),10,8);
+for(let i=0;i<n;i++){const m=new THREE.Mesh(g,mat);m.castShadow=k!='a';const q=n>1?ext:0;m.position.set((R()-.5)*q*1.2,(R()-.5)*q,(R()-.5)*q);if(k=='s')m.scale.set(1,.8,1.3);if(k=='c')m.scale.set(1,1.6,1);grp.add(m)}
+if(k=='h'){const cl=new THREE.Mesh(new THREE.SphereGeometry(ext*.9+.2,12,10),new THREE.MeshBasicMaterial({color:0xe3cfa0,transparent:true,opacity:.22,depthWrite:false}));grp.add(cl);grp.userData.fl=[cl]}
+sc.add(grp);placeG()}
+function clearG(){if(grp){sc.remove(grp);grp=null}}
+function placeG(){if(!grp)return;if(phase=='idle'||phase=='accel')grp.position.set(ringC.x+Math.cos(theta)*3.5,ringC.y+Math.sin(theta)*3.5,0)}
+// ---------- actions
+function resetAll(){clearG();phase='idle';whine(false);P.forEach(p=>{p.m.position.copy(p.hp);p.m.rotation.copy(p.hr);p.m.visible=true;p.free=false});
+bodies.concat(fx,cracks).forEach(b=>sc.remove(b.m||b));bodies.length=0;fx.length=0;cracks.length=0;glassCr.forEach(g=>sc.remove(g));glassCr.length=0;P.forEach(p=>{sc.add(p.m);p.m.position.copy(p.hp);p.m.rotation.copy(p.hr)});theta=-Math.PI/2;vel=0;hs=0;auto=0;$('res').style.display='none';buildG()}
+$('rs').onclick=()=>{queue=null;resetAll()};
+$('go').onclick=()=>{A();if(phase!='idle')resetAll();phase='accel';whine(true)};
+$('fire').onclick=()=>{A();if(phase=='idle'){phase='accel'}if(phase=='accel')launch()};
+function launch(o){o=o||{};ov=o;vel=o.v!=null?o.v:getV();whine(false);if(!grp)buildG();grp.position.set(ringC.x,1.4,0);phase='flying';tone(200,60,.4,.15,'square')}
+function sim(dt,rdt){const f=Math.min(.99,(phase=='flying'?vel:getV())/C);
+if(grp&&grp.userData.fl)grp.userData.fl.forEach(m=>m.scale.setScalar(.92+R()*.16));if(phase=='accel'){theta+=(3+s*.5)*dt;placeG();if(wh)wh.frequency.value=120+f*2200+s*6;grp&&(grp.rotation.z+=dt*3)}
+if(phase=='flying'&&grp){const ext=grp.userData.ext||.3,sp=14+vel/C*60+s*.3;grp.position.x+=Math.max(sp,14)*dt;grp.scale.x=1+Math.min(f*8,6);if(grp.position.x+ext*.5>=2.9)impact()}
+const g=-9.8;for(let i=bodies.length-1;i>=0;i--){const b=bodies[i];b.v.y+=g*dt;b.m.position.addScaledVector(b.v,dt);b.m.rotation.x+=b.w.x*dt;b.m.rotation.y+=b.w.y*dt;b.m.rotation.z+=b.w.z*dt;const p=b.m.position;
+if(p.y<b.r){p.y=b.r;if(Math.abs(b.v.y)>1.5&&R()<.3)tone(900+R()*500,400,.06,.04,'triangle');b.v.y*=-b.bn;b.v.x*=.8;b.v.z*=.8;b.w.multiplyScalar(.7)}
+if(Math.abs(p.z)>6.9){const hit=b.v.length();p.z=Math.sign(p.z)*6.9;b.v.z*=-.4;if(b.k=='f'&&hit>8&&glassCr.length<30){const c=new THREE.Mesh(new THREE.PlaneGeometry(.8+R()*.8,.03),new THREE.MeshBasicMaterial({color:0xffffff}));c.position.set(p.x,p.y,Math.sign(p.z)*6.88);c.rotation.z=R()*3;sc.add(c);glassCr.push(c);noise(.15,5000,.08,'highpass')}}
+if(p.x>14.4){p.x=14.4;b.v.x*=-.4}if(p.y>0&&b.k=='d'&&p.y<.09){b.life-=dt*2}b.life-=dt*(b.k=='d'?.3:.04);if(b.life<0){sc.remove(b.m);bodies.splice(i,1)}}
+for(let i=fx.length-1;i>=0;i--){const e=fx[i];e.t+=dt;const u=e.t/e.d;if(u>=1){sc.remove(e.m);fx.splice(i,1);continue}e.m.scale.setScalar(e.s0+(e.s1-e.s0)*Math.sqrt(u));e.m.material.opacity=e.o*(1-u);if(e.up)e.m.position.y+=dt*e.up}}
+function addFx(m,s0,s1,d,o,up){m.material.transparent=true;m.material.opacity=o;sc.add(m);fx.push({m,s0,s1,d,t:0,o,up})}
+function impact(){const t=T[sel],mm=ov.mm!=null?ov.mm:mmul,M=t.m*mm*count,v=vel,E=.5*M*v*v,ratio=E*t.pe/thr,st=ratio<.3?0:ratio<.7?1:ratio<1?2:3,frac=v/C;
+const pos=grp.position.clone();clearG();phase='done';
+R_(M,E,ratio,st,frac,t,mm);hs=.1;auto=st>=2?2.2:0;flash=st>=3?1:st>=1?.4:.15;shake=[.05,.15,.35,.8][st];
+noise(.25,300+st*500,.5);tone(150,40,.3,.6);if(t.k!='a')noise(.3,900,.2*(1+(t.k=='l')));
+if(st>=1){for(let i=0;i<3;i++)setTimeout(()=>noise(.12,6000,.15,'highpass'),i*60);tone(1800,300,.15,.1,'triangle')}
+const nd=t.k=='l'?Math.min(120,count+30):t.k=='a'?10:t.k=='c'?Math.min(count,40)+10:24,sp=3+Math.sqrt(Math.min(ratio,60))*2.5;
+for(let i=0;i<nd;i++){const m=drop(t.col,t.k=='l'?.06:.08);m.position.copy(IP).add(new THREE.Vector3(-.2,R()*.4-.2,R()*.6-.3));const a=R()*6.28,c=R()*2-1,d=new THREE.Vector3(-.2+(R()-.3)*.5,Math.abs(c)*.8,Math.cos(a)).normalize();
+if(st==0){d.x=-Math.abs(d.x);d.multiplyScalar(2+R()*3)}else d.multiplyScalar(sp*(.4+R()));makeBody(m,d,new THREE.Vector3(),{r:.05,bn:.15,k:'d',life:1+R()})}
+if(st==1||st==2){const n=st==1?4:2;P.filter(p=>!p.free&&p.big).sort((a,b)=>a.hp.distanceTo(IP)-b.hp.distanceTo(IP)).slice(0,n).forEach((p,i)=>{if(st==1){}else free(p,ratio,1)});
+for(let i=0;i<(st==1?5:10);i++){const c=new THREE.Mesh(new THREE.BoxGeometry(.012,.3+R()*.5,.02),new THREE.MeshBasicMaterial({color:0x222222}));c.position.set(3.12,.8+R()*.7,(R()-.5)*1);c.rotation.x=R()*3;sc.add(c);cracks.push(c)}
+for(let i=0;i<(st==1?5:14);i++){const m=shard();m.position.copy(IP);makeBody(m,new THREE.Vector3(R()*3,R()*4+1,(R()-.5)*6),new THREE.Vector3(R()*9,R()*9,R()*9),{k:'f',r:.08})}}
+if(st==3){P.forEach(p=>free(p,ratio,1));for(let i=0;i<44;i++){const m=shard();m.position.set(4+(R()-.5),.4+R()*1.5,(R()-.5)*1.4);const d=m.position.clone().sub(IP).normalize();d.x+=.6;makeBody(m,d.multiplyScalar(sp*(.5+R())),new THREE.Vector3(R()*14,R()*14,R()*14),{k:'f',r:.1})}
+for(let i=0;i<10;i++){const d=new THREE.Mesh(new THREE.SphereGeometry(.5,8,6),new THREE.MeshBasicMaterial({color:0xcfc4b0}));d.position.set(3.5+R()-.5,1+R(),(R()-.5)*1.5);addFx(d,.5,2.4+R()*2,2.2,.5,.6)}
+const sw=new THREE.Mesh(new THREE.RingGeometry(.3,.45,48),new THREE.MeshBasicMaterial({color:0xaee6ff,side:THREE.DoubleSide}));sw.position.copy(IP);sw.rotation.y=Math.PI/2;addFx(sw,1,28,.9,.9)}
+tone(90,30,.5,.4,'sawtooth');if(t.k=='h'){for(let i=0;i<16;i++){const fm=new THREE.Mesh(new THREE.SphereGeometry(.4,8,6),new THREE.MeshBasicMaterial({color:i%2?0xd9bf8a:0xeedfba,depthWrite:false}));fm.position.set(IP.x+R()*.6-.3,IP.y+R()*.8-.2,(R()-.5)*1.6);addFx(fm,.4,2.4+R()*1.2,1.8+R()*.8,.55,.5)}noise(.5,3000,.2,'highpass')}if(st>=2){noise(.6,2500,.3);if(t.k!='a')setTimeout(()=>tone(300,80,.15,.2,'sine'),150)}
+setTimeout(()=>{if(queue&&queue.length){resetAll();const q=queue.shift();setupFire(q)}else if(queue){finishCmp()}},3600)}
+function free(p,ratio,k){if(p.free)return;p.free=true;const d=p.m.position.clone().sub(IP),dist=d.length();d.normalize();d.x+=.8;d.y+=.35;d.normalize();const f=(5+Math.sqrt(Math.min(ratio,60))*3)/(1+dist*.5)*(.6+R()*.8);makeBody(p.m,d.multiplyScalar(f),new THREE.Vector3((R()-.5)*14,(R()-.5)*14,(R()-.5)*14),{k:'f',r:.3,bn:.35})}
+function R_(M,E,ratio,st,frac,t,mm){const n=(notes.length?notes[notes.length-1].n:0)+1,r={k:Object.keys(T).length&&t.k,count,stage:st,v:vel,ratio,frac,mm};
+notes.push({n,t:t.n.slice(0,2),v:vel,M,E,s:st});if(notes.length>60)notes.shift();localStorage.setItem('toiletLab',JSON.stringify(notes));
+let h=`<b>${STG[st]}</b><br>에너지 ${E.toExponential(2)} J (임계값의 ${(ratio*100).toFixed(1)}%) · 운동량 ${(M*vel).toExponential(2)}<br>💡 ${FACTS[(R()*FACTS.length)|0]}`;
+if(queue){cmpRes.push({st,E,p:M*vel,v:vel,M})}
+if(chall){const sr=MS[mi][1](r);if(sr>(stars[mi]||0)){stars[mi]=sr;localStorage.setItem('toiletStars',JSON.stringify(stars))}h+=`<br>미션 결과: ${'★'.repeat(sr)}${'☆'.repeat(3-sr)}`;drawMs()}
+const e=$('res');e.innerHTML=h;e.style.display='block'}
+function setupFire(o){sel=o.sel!=null?o.sel:sel;launchAuto(o)}
+function launchAuto(o){buildG();phase='accel';launch(o)}
+$('cmp').onclick=()=>{A();cmpRes=[];resetAll();const v=getV(),v2=Math.min(v*2,C*.99);queue=[{mm:mmul*4,v:v,sel}];setTimeout(()=>{},0);const first={mm:mmul,v:v2,sel};queue.push(first);const q=queue.shift();$('res').style.display='none';setupFireM(q)};
+function setupFireM(q){const old=mmul;mmul=q.mm;buildG();mmul=old;phase='accel';launch(q)}
+function finishCmp(){queue=null;const [a,b]=cmpRes;$('res').innerHTML=`<b>⚖️ 비교 결과</b><br>A 질량×4: 에너지 ${a.E.toExponential(2)}J, 운동량 ${a.p.toExponential(1)} → ${STG[a.st]}<br>B 속도×2: 에너지 ${b.E.toExponential(2)}J, 운동량 ${b.p.toExponential(1)} → ${STG[b.st]}<br>💡 에너지가 같아 파괴 정도도 같아요. 하지만 속도는 2배만 올리면 되고, 질량은 4배나 필요해요. 속도의 힘이 제곱이라서예요!`;$('res').style.display='block'}
+// ---------- camera
+let ct=.5,cp=.35,cd=18,cx=-1,cs=new THREE.Vector3(),down=false,lx=0,ly=0;
+cv.onpointerdown=e=>{down=true;lx=e.clientX;ly=e.clientY};addEventListener('pointerup',()=>down=false);
+addEventListener('pointermove',e=>{if(down&&camM==0){ct-=(e.clientX-lx)*.006;cp=Math.max(.05,Math.min(1.4,cp+(e.clientY-ly)*.006));lx=e.clientX;ly=e.clientY}});
+cv.onwheel=e=>{cd=Math.max(5,Math.min(40,cd+e.deltaY*.02))};
+function camUpd(rdt,f){const tp=new THREE.Vector3(),lk=new THREE.Vector3(3,1.5,0);
+if(camM==1&&grp){tp.set(grp.position.x-5,grp.position.y+1.5,4);lk.set(grp.position.x+4,grp.position.y,0)}
+else if(camM==2){tp.set(-.5,1.8,3.4);lk.set(4,1.2,0)}else if(camM==3){tp.set(-2,2.2,6.3);lk.set(3.5,1.2,0)}
+else{tp.set(lk.x+Math.sin(ct)*Math.cos(cp)*cd,lk.y+Math.sin(cp)*cd,Math.cos(ct)*Math.cos(cp)*cd)}
+cam.position.lerp(tp,Math.min(1,rdt*5));cs.set((R()-.5)*shake,(R()-.5)*shake,(R()-.5)*shake);cam.position.add(cs);cam.lookAt(lk);
+cam.fov=60+f*45;cam.updateProjectionMatrix();shake*=Math.exp(-rdt*5)}
+function resize(){ren.setSize(innerWidth,innerHeight,false);cam.aspect=innerWidth/innerHeight;cam.updateProjectionMatrix()}addEventListener('resize',resize);resize();
+// ---------- loop
+let last=performance.now(),tm=0;
+function loop(now){requestAnimationFrame(loop);const rdt=Math.min((now-last)/1000,.05);last=now;tm+=rdt;
+if(hs>0)hs-=rdt;else if(auto>0)auto-=rdt;const us=$('slow').checked?+$('sw').value:1,k=hs>0?0:(auto>0?Math.min(us,.15):(phase=='flying'||bodies.length?us:1)),dt=rdt*k;
+sim(dt,rdt);$('fire').disabled=phase!='accel';const v=phase=='flying'||phase=='done'?vel:getV(),f=Math.min(.99,v/C);
+$('rd').innerHTML=`속도 <span class="o">${fmtV(v)} m/s</span><i>·</i>광속의 <span class="g">${(f*100).toFixed(3)}% c</span>`;
+cv.style.filter=(phase=='accel'||phase=='flying')&&f>.02?`hue-rotate(${f*160}deg) saturate(${1+f*2}) contrast(${1+f*.4})`:'none';
+flash*=Math.exp(-rdt*6);fl.intensity=flash*12;$('flash').style.opacity=Math.min(.9,flash*.8);
+warn.forEach((l,i)=>l.intensity=phase=='done'?(Math.sin(tm*10+i*3)>0?3:0):0);rn.material.color.setHSL((.5+tm*.05+f*.3)%1,1,.6);neon.intensity=1+Math.sin(tm*6)*.3+f*2;
+camUpd(rdt,phase=='flying'?f:0);ren.render(sc,cam)}
+$('pt2').onclick=()=>$('pt').click();
+$('snd').onclick=function(){muted=!muted;this.textContent=muted?'🔇':'🔊';if(mg)mg.gain.value=muted?0:1};
+$('cmv').onclick=()=>{camM=(camM+1)%4;[...$('cams').children].forEach((x,j)=>x.classList.toggle('on',j==camM))};
+upd();buildG();drawMs();setMode();cam.position.set(10,8,16);requestAnimationFrame(loop);
+</script></body></html>
