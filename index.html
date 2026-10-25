@@ -64,7 +64,7 @@ h4{color:#38b6ff;font-size:14px}
 <label>속도 <b id="sv"></b><input type="range" id="sp" min="0" max="100" step="0.1" value="30"></label>
 <label>입자 개수 <b id="cv">1</b><input type="range" id="ct" min="1" max="500" value="1"></label>
 <label>질량 배율 <b id="mv">1</b>x<input type="range" id="mm" min="0.1" max="10" step="0.1" value="1"></label>
-<label>변기 파괴 임계값 <b id="tv"></b><input type="range" id="th" min="6" max="26" step="0.1" value="10"></label>
+<label>변기 파괴 임계값 <b id="tv"></b><input type="range" id="th" min="6" max="40" step="0.1" value="10"></label>
 <label><input type="checkbox" id="slow" checked> 슬로모션 <b id="sl">0.3</b>x<input type="range" id="sw" min="0.05" max="1" step="0.05" value="0.3"></label>
 <h4>카메라</h4><div class="row" id="cams"></div>
 <h4>비교 실험</h4><button id="cmp">⚖️ 같은 에너지, 다른 조합 (질량 4배 vs 속도 2배)</button>
@@ -85,7 +85,7 @@ const T=[
 {n:'💨 방귀 가스',m:.01,d:1,r:.5,e:0,v:0,col:0xb6d98a,pe:.5,k:'a'},
 {n:'🪨 돌덩이',m:50,d:2700,r:.3,e:.3,v:1,col:0x777777,pe:1.2,k:'r'},
 {n:'🌫️ 분말 고형',m:.2,d:500,r:.06,e:0,v:.3,col:0xc9a66b,pe:.9,k:'h'}];
-const NM=['💩 일반 고형 배출물','🌊 일반 액상형 배출물','🌽 일반 옹수수','🏆 황금 고형 배출물','🪐 일반 배출물 고속 부패 가스','🪨 고밀도 암석','🖌️ 일반 고형 배출물 분말'];T.forEach((t,i)=>t.n=NM[i]);
+const NM=['💩 일반 고형 배출물','🌊 일반 액상형 배출물','🌽 일반 옥수수','🏆 황금 고형 배출물','🪐 일반 배출물 고속 부패 가스','🪨 고밀도 암석','🖌️ 일반 고형 배출물 분말'];T.forEach((t,i)=>t.n=NM[i]);
 const CAMS=['자유 시점','입자 추적','변기 클로즈업','방호벽 안쪽'];
 const FACTS=['속도가 2배면 운동에너지는 4배가 돼요!','질량이 2배면 운동에너지는 2배가 돼요. 속도가 더 힘이 세요!','E = ½mv² : 속도는 제곱으로 효과가 커져요.','같은 에너지여도 질량이 큰 쪽이 운동량(mv)은 더 커요.','에너지가 임계값을 넘으면 도자기는 버티지 못하고 깨져요.'];
 const STG={get 0(){return '철썩! '+TG.nm+' 무사 😌'},get 1(){return '금이 갔어요! 🔨'},get 2(){return '큰 조각이 떨어져 나갔어요! 😱'},get 3(){return TG.nm+' 대폭발 파괴!! 💥'}};
