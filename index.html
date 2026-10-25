@@ -58,13 +58,13 @@ h4{color:#38b6ff;font-size:14px}
 <div id="panel">
 <div class="row" id="tabs"><button data-t="a" class="on">실험</button><button data-t="b">도전</button><button data-t="n">노트</button></div>
 <div id="ta">
-<h4>충돌 대상</h4><div class="row" id="tgs"></div><div style="font-size:11px;opacity:.75">※ 행성 임계값은 재미용으로 크게 줄인 값이에요 (실제 달의 결합 에너지는 약 3×10¹⁹ 톤 TNT)</div>
+<h4>충돌 대상</h4><div class="row" id="tgs"></div>
 <h4>입자 종류 선택</h4><div class="row" id="types"></div>
 <div id="info" style="font-size:11px;opacity:.8"></div>
 <label>속도 <b id="sv"></b><input type="range" id="sp" min="0" max="100" step="0.1" value="30"></label>
-<label>입자 개수 <b id="cv">1</b><input type="range" id="ct" min="0" max="500" value="0"></label>
-<label>질량 배율 <b id="mv">1</b>x<input type="range" id="mm" min="-10" max="50" step="1" value="0"></label>
-<label>파괴 임계값 <b id="tv"></b><input type="range" id="th" min="-3" max="50" step="0.1" value="0.4"></label>
+<label>입자 개수 <b id="cv">1</b><input type="range" id="ct" min="0" max="1200" value="0"></label>
+<label>질량 배율 <b id="mv">1</b>x<input type="range" id="mm" min="-10" max="120" step="1" value="0"></label>
+<label>파괴 임계값 <b id="tv"></b><input type="range" id="th" min="-3" max="62" step="0.1" value="0.4"></label>
 <label><input type="checkbox" id="slow" checked> 슬로모션 <b id="sl">0.3</b>x<input type="range" id="sw" min="0.05" max="1" step="0.05" value="0.3"></label>
 <h4>카메라</h4><div class="row" id="cams"></div>
 <h4>비교 실험</h4><button id="cmp">⚖️ 같은 에너지, 다른 조합 (질량 4배 vs 속도 2배)</button>
@@ -240,7 +240,7 @@ setTimeout(()=>{if(queue&&queue.length){resetAll();const q=queue.shift();setupFi
 function free(p,ratio,k){if(p.free)return;p.free=true;const d=p.m.position.clone().sub(IP),dist=d.length();d.normalize();d.x+=.8;d.y+=.35;d.normalize();const f=(5+Math.sqrt(Math.min(ratio,60))*3)/(1+dist*.5)*(.6+R()*.8);makeBody(p.m,d.multiplyScalar(f),new THREE.Vector3((R()-.5)*14,(R()-.5)*14,(R()-.5)*14),{k:'f',r:.3,bn:.35})}
 function R_(M,E,ratio,st,frac,t,mm){const n=(notes.length?notes[notes.length-1].n:0)+1,r={k:Object.keys(T).length&&t.k,count,stage:st,v:vel,ratio,frac,mm};
 notes.push({n,t:t.n.slice(0,2),v:vel,M,E,s:st});if(notes.length>60)notes.shift();localStorage.setItem('toiletLab',JSON.stringify(notes));
-let h=`<b>${STG[st]}</b><br>에너지 ${fmtTNT(E/4.184e9)} (임계값의 ${(ratio*100).toFixed(1)}%) · 운동량 ${(M*vel).toExponential(2)}<br>💡 ${FACTS[(R()*FACTS.length)|0]}`;
+let h=`<b>${STG[st]}</b><br>에너지 ${fmtTNT(E/4.184e9)} (임계값의 ${(ratio*100).toFixed(3)}%) · 운동량 ${(M*vel).toExponential(2)}<br>💡 ${FACTS[(R()*FACTS.length)|0]}`;
 if(queue){cmpRes.push({st,E,p:M*vel,v:vel,M})}
 if(chall){const sr=MS[mi][1](r);if(sr>(stars[mi]||0)){stars[mi]=sr;localStorage.setItem('toiletStars',JSON.stringify(stars))}h+=`<br>미션 결과: ${'★'.repeat(sr)}${'☆'.repeat(3-sr)}`;drawMs()}
 const e=$('res');e.innerHTML=h;e.style.display='block'}
