@@ -45,6 +45,7 @@ button,#hud .tt,#rd,#mode,h4{font-family:'Do Hyeon','Noto Sans KR','Malgun Gothi
 #bar #fire:disabled{background:rgba(58,22,28,.9);border-color:#4a2a30;color:#7d5a60;box-shadow:none;cursor:not-allowed}
 #panel{left:auto;right:12px;top:calc(env(safe-area-inset-top,0px) + 72px);max-height:calc(100% - 160px)}
 #res{top:76px}
+.ni{display:flex;gap:6px;align-items:center;margin:2px 0 6px}.ni input,.ni select{flex:1;min-width:0;background:#0b1424;color:#fff;border:1px solid #2b4a66;border-radius:8px;padding:5px 8px;font:inherit;font-size:13px}.ni select{flex:0 0 auto}.ni span{font-size:12px;opacity:.8;white-space:nowrap}
 #panel{width:min(400px,calc(100% - 24px))}
 #types,#tgs{gap:8px}#types button,#tgs button{font-size:16px;padding:9px 14px;border-radius:12px;background:rgba(14,26,48,.85);border:1px solid #1f3a56;color:#fff}
 #types button.on,#tgs button.on{background:linear-gradient(180deg,#0a8bc4,#0a6aa0);border-color:#4fd0ff;box-shadow:0 0 12px rgba(79,208,255,.55)}
@@ -65,7 +66,7 @@ h4{color:#38b6ff;font-size:14px}
 <label>입자 개수 <b id="cv">1</b><input type="range" id="ct" min="0" max="1200" value="0"></label>
 <label>질량 배율 <b id="mv">1</b>x<input type="range" id="mm" min="-10" max="120" step="1" value="0"></label>
 <label>파괴 임계값 <b id="tv"></b><input type="range" id="th" min="-3" max="62" step="0.1" value="0.4"></label>
-<label><input type="checkbox" id="slow" checked> 슬로모션 <b id="sl">0.3</b>x<input type="range" id="sw" min="0.05" max="1" step="0.05" value="0.3"></label>
+<label><input type="checkbox" id="slow" checked> 슬로모션 <b id="sl">0.3</b>x<input type="range" id="sw" min="0.05" max="1" step="0.01" value="0.3"></label>
 <h4>카메라</h4><div class="row" id="cams"></div>
 <h4>비교 실험</h4><button id="cmp">⚖️ 같은 에너지, 다른 조합 (질량 4배 vs 속도 2배)</button>
 </div>
@@ -149,7 +150,7 @@ const NP=10,NT=4,pw=Math.PI*2/NP,th=Math.PI/NT;for(let a=0;a<NP;a++)for(let b=0;
 for(let i=0;i<uv.count;i++){uv.setXY(i,(ps+uv.getX(i)*pw)/(Math.PI*2),1-(ts+(1-uv.getY(i))*th)/Math.PI)}
 g.computeBoundingBox();const c=new THREE.Vector3();g.boundingBox.getCenter(c);g.translate(-c.x,-c.y,-c.z);const m=new THREE.Mesh(g,mat);m.position.set(pl.cx+c.x,cy+c.y,c.z);m.castShadow=m.receiveShadow=true;sc.add(m);P.push({m,hp:m.position.clone(),hr:m.rotation.clone(),big:true})}
 Object.assign(TG,{nm:pl.nm,ix:sx-.3,cs:pl.R*.35,ss:pl.R*.6,fs:pl.R*.6,f2:6,sr:pl.R*.5,c:V(pl.cx,cy,0),fl:V(4,2.5,0),look:V(pl.cx-1,cy,0),cp:V(sx-5,3,pl.R+5),ip2:V(sx-8,3.5,6.3)});IP.set(sx,1.4,0)}
-fl.position.copy(IP);$('th').value=thx;upd();buildG();$('res').style.display='none'}
+fl.position.copy(IP);$('th').value=thx;ovT=null;upd();syncNums();buildG();$('res').style.display='none'}
 function shard(){const s=(.07+R()*.15)*TG.ss,m=new THREE.Mesh(new THREE.BoxGeometry(s,s*(.5+R()),s*(.5+R())),SH);m.castShadow=true;sc.add(m);return m}
 function drop(col,sz){const m=new THREE.Mesh(new THREE.SphereGeometry(sz||.07,8,6),new THREE.MeshStandardMaterial({color:col,roughness:.2}));sc.add(m);return m}
 // ---------- audio
@@ -163,11 +164,11 @@ function whine(on){const a=A();if(on&&!wh){wh=a.createOscillator();wg=a.createGa
 // ---------- UI
 const fmtTNT=t=>{for(const[v,n]of[[1e12,'테라톤'],[1e9,'기가톤'],[1e6,'메가톤'],[1e3,'킬로톤'],[1,'톤']])if(t>=v)return (t/v).toPrecision(3)+' '+n+' TNT';return (t*1000).toPrecision(3)+' kg TNT'};
 const fmtV=v=>v<1e3?v.toFixed(1):v.toExponential(2);
-function getV(){return C*.99*Math.pow(s/100,4)}
-function upd(){s=+$('sp').value;count=Math.round(Math.pow(10,$('ct').value/100));mmul=+Math.pow(10,$('mm').value/10).toPrecision(2);thr=Math.pow(10,+$('th').value)*4.184e9;
-$('sv').textContent=fmtV(getV())+' m/s ('+(getV()/C*100).toFixed(3)+'%)';$('cv').textContent=count;$('mv').textContent=mmul;$('tv').textContent=(Math.pow(10,+$('th').value)*4.184e9).toExponential(2)+' J | '+fmtTNT(Math.pow(10,+$('th').value));$('sl').textContent=$('sw').value;
+let ovV=null,ovC=null,ovM=null,ovT=null;function getV(){return ovV!=null?ovV:C*.99*Math.pow(s/100,4)}
+function upd(){s=+$('sp').value;count=ovC!=null?ovC:Math.round(Math.pow(10,$('ct').value/100));mmul=ovM!=null?ovM:+Math.pow(10,$('mm').value/10).toPrecision(2);thr=ovT!=null?ovT:Math.pow(10,+$('th').value)*4.184e9;
+$('sv').textContent=fmtV(getV())+' m/s ('+(getV()/C*100).toFixed(3)+'%)';$('cv').textContent=count;$('mv').textContent=mmul;$('tv').textContent=thr.toExponential(2)+' J | '+fmtTNT(thr/4.184e9);$('sl').textContent=$('sw').value;
 const t=T[sel];$('info').textContent=`질량 ${t.m}kg · 밀도 ${t.d}kg/m³ · 크기 ${t.r*2}m · 탄성 ${t.e} · 점성 ${t.v}`}
-['sp','ct','mm','th','sw'].forEach(i=>$(i).oninput=()=>{upd();if(phase=='idle'||phase=='accel')buildG()});
+['sp','ct','mm','th','sw'].forEach(i=>$(i).oninput=()=>{if(i=='sp')ovV=null;if(i=='ct')ovC=null;if(i=='mm')ovM=null;if(i=='th')ovT=null;upd();syncNums();if(phase=='idle'||phase=='accel')buildG()});
 [0,1,6,2,3,4,5].forEach((i,pos)=>{const t=T[i],b=document.createElement('button');b.textContent=t.n;b.onclick=()=>{sel=i;[...$('types').children].forEach((x,j)=>x.classList.toggle('on',j==pos));upd();buildG()};$('types').appendChild(b)});
 CAMS.forEach((n,i)=>{const b=document.createElement('button');b.textContent=n;b.onclick=()=>{camM=i;[...$('cams').children].forEach((x,j)=>x.classList.toggle('on',j==i))};$('cams').appendChild(b)});
 $('types').children[0].classList.add('on');$('cams').children[0].classList.add('on');
@@ -272,6 +273,19 @@ flash*=Math.exp(-rdt*6);fl.intensity=flash*12;$('flash').style.opacity=Math.min(
 warn.forEach((l,i)=>l.intensity=phase=='done'?(Math.sin(tm*10+i*3)>0?3:0):0);rn.material.color.setHSL((.5+tm*.05+f*.3)%1,1,.6);neon.intensity=1+Math.sin(tm*6)*.3+f*2;
 camUpd(rdt,phase=='flying'?f:0);ren.render(sc,cam)}
 [['t','🚽 변기'],['k','🚛 고형 배출물 수거 차 탱크'],['e','🌍 지구'],['m','🌙 달'],['r','🔴 화성']].forEach(([k,n],i)=>{const b=document.createElement('button');b.textContent=n;b.onclick=()=>{[...$('tgs').children].forEach((x,j)=>x.classList.toggle('on',j==i));setTarget(k)};$('tgs').appendChild(b)});$('tgs').children[0].classList.add('on');
+const NUMS=[];function syncNums(){NUMS.forEach(f=>f())}
+function mkNum(id,units,fmt,onSet){const sl=$(id),d=document.createElement('div');d.className='ni';const inp=document.createElement('input');inp.type='text';inp.inputMode='decimal';d.appendChild(inp);let sel=null;
+if(units.length>1){sel=document.createElement('select');units.forEach(u=>{const o=document.createElement('option');o.textContent=u;sel.appendChild(o)});d.appendChild(sel);sel.onchange=()=>{inp.value=fmt(sel.value)}}else{const u=document.createElement('span');u.textContent=units[0];d.appendChild(u)}
+sl.parentNode.after(d);const sv=()=>sel?sel.value:'';
+inp.onchange=()=>{const v=parseFloat(inp.value.replace(/,/g,''));if(isFinite(v)&&v>=0)onSet(v,sv());upd();syncNums();if(phase=='idle'||phase=='accel')buildG()};
+inp.onkeydown=e=>{if(e.key=='Enter')inp.blur()};NUMS.push(()=>{if(document.activeElement!==inp)inp.value=fmt(sv())})}
+const cl=(x,a,b)=>Math.max(a,Math.min(b,x));
+mkNum('sp',['m/s'],()=>fmtV(getV()),v=>{v=Math.min(v,C*.99);ovV=v;$('sp').value=100*Math.pow(v/(C*.99),.25)});
+mkNum('ct',['개'],()=>String(count),v=>{ovC=cl(Math.round(v),1,1e18);$('ct').value=cl(100*Math.log10(ovC),0,1200)});
+mkNum('mm',['배'],()=>String(mmul),v=>{ovM=cl(v,.001,1e18);$('mm').value=cl(10*Math.log10(ovM),-10,120)});
+mkNum('th',['J','톤 TNT'],u=>u=='J'?thr.toExponential(2):(thr/4.184e9).toExponential(2),(v,u)=>{ovT=Math.max(1,u=='J'?v:v*4.184e9);$('th').value=cl(Math.log10(ovT/4.184e9),-3,62)});
+mkNum('sw',['x'],()=>$('sw').value,v=>{$('sw').value=cl(v,.05,1)});
+setTimeout(syncNums,0);
 $('pt2').onclick=()=>$('pt').click();
 $('snd').onclick=function(){muted=!muted;this.textContent=muted?'🔇':'🔊';if(mg)mg.gain.value=muted?0:1};
 $('cmv').onclick=()=>{camM=(camM+1)%4;[...$('cams').children].forEach((x,j)=>x.classList.toggle('on',j==camM))};
